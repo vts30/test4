@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { getPool } from './db';
+import { getPool, closePool } from './db';
 
 async function initSchema(): Promise<void> {
   const sql = readFileSync(join(__dirname, '../db/init.sql'), 'utf-8');
@@ -9,7 +9,7 @@ async function initSchema(): Promise<void> {
     await pool.query(sql);
     console.log('[perf] Schema initialized successfully');
   } finally {
-    await pool.end();
+    await closePool();
   }
 }
 

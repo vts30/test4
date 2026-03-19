@@ -88,6 +88,7 @@ Or use environment variables (these take priority over `perf.config.json`):
 | `PG_DB` | Database name |
 | `PERF_ENV` | Default environment tag for all tests |
 | `PERF_VERSION` | Default version tag for all tests |
+| `PERF_CSV_PATH` | Write results to this CSV file instead of Postgres (e.g. `./perf-results.csv`) |
 
 ### 3. Create the database schema
 
@@ -115,6 +116,16 @@ npm run test:e2e
 # All tests
 npm test
 ```
+
+### Running without Postgres (CSV mode)
+
+Set `PERF_CSV_PATH` to write results to a CSV file instead of Postgres. Useful for local development and CI environments where a database isn't available.
+
+```bash
+PERF_CSV_PATH=./perf-results.csv npx playwright test
+```
+
+The file is created on first write with a header row; subsequent runs append rows. The columns match the database schema exactly, so data is portable between the two modes.
 
 ### Verbose output
 

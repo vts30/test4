@@ -1,5 +1,29 @@
+import { appendFileSync, existsSync } from 'fs';
 import { getPool } from './db';
 import type { PerfRecord } from './recorder';
+
+const CSV_HEADER = 'test_name,environment,version,url,method,status_code,response_time_ms,response_size_bytes,content_type,assertions,recorded_at';
+
+function escapeCsv(value: string | number | null): string {
+  if (value === null || value === undefined) return '';
+  const s = String(value);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function flushToCsv(batch: QueueRecord[], csvPath: string): void {
+  const needsHeader = !existsSync(csvPath);
+  const rows = batch.map((r) => [
+    r.testName, r.environment, r.version,
+    r.url, r.method, r.statusCode,
+    r.responseTimeMs, r.responseSizeBytes, r.contentType,
+    JSON.stringify(r.assertions), new Date().toISOString(),
+  ].map(escapeCsv).join(','));
+  const content = (needsHeader ? CSV_HEADER + '\n' : '') + rows.join('\n') + '\n';
+  appendFileSync(csvPath, content, 'utf-8');
+}
 
 export interface QueueRecord extends PerfRecord {
   testName: string;
@@ -26,6 +50,16 @@ export function getQueue(): Queue {
   const flush = async (): Promise<void> => {
     if (buffer.length === 0) return;
     const batch = buffer.splice(0, buffer.length);
+
+    const csvPath = process.env.PERF_CSV_PATH;
+    if (csvPath) {
+      try {
+        flushToCsv(batch, csvPath);
+      } catch (err) {
+        console.warn(`[perf] Failed to write ${batch.length} record(s) to CSV: ${(err as Error).message}`);
+      }
+      return;
+    }
 
     const values = batch.map((r, i) => {
       const base = i * 11;

@@ -21,7 +21,8 @@ test('login and check app', async ({ page, usePerfContext }) => {
     res => res.url().includes('/inf/auth/ddbAuthentication') && res.request().method() === 'POST'
   );
 
-  await page.goto(`${loginUrl}?login=${user}`);
+  await page.goto(loginUrl);
+  await page.locator('#login').fill(user);
   await page.locator('#passwd').fill(password);
   await page.locator('#submit-button').click();
   await authDone;

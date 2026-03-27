@@ -28,6 +28,9 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   await authDone;
 
   await page.goto(appsUrl);
+  await page.waitForLoadState('networkidle');
+  await page.screenshot({ path: 'after-login.png', fullPage: true });
+
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible();
 
   await page.getByText('ESM', { exact: true }).dblclick();

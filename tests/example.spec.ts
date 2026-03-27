@@ -17,15 +17,17 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   const user     = process.env.LOGIN_USER!;
   const password = process.env.LOGIN_PASSWORD!;
 
-  const authDone = page.waitForResponse(
-    res => res.url().includes('/inf/auth/ddbAuthentication') && res.request().method() === 'POST'
-  );
+  page.on('response', res => {
+    if (res.request().method() === 'POST') {
+      console.log('[POST response]', res.url(), res.status());
+    }
+  });
 
   await page.goto(loginUrl);
   await page.locator('#login').fill(user);
   await page.locator('#passwd').fill(password);
   await page.locator('#submit-button').click();
-  await authDone;
+  await page.waitForLoadState('domcontentloaded');
 
   await page.goto(appsUrl);
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible();

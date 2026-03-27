@@ -30,5 +30,5 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   await page.goto(appsUrl);
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible();
 
-  await page.locator('.g-asw-desktop-item-label', { hasText: /^ESM$/ }).click();
+  await page.locator('.g-asw-desktop-item:has(.g-asw-desktop-item-label:text-is("ESM"))').click();
 });

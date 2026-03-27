@@ -20,7 +20,8 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   await page.locator('#login').waitFor({ state: 'visible' });
   await page.locator('#login').fill(user);
   await page.locator('#passwd').waitFor({ state: 'visible' });
-  await page.locator('#passwd').fill(password);
+  await page.locator('#passwd').click();
+  await page.locator('#passwd').pressSequentially(password);
   await page.locator('#submit-button').click();
 
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible({ timeout: 15000 });

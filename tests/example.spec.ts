@@ -9,8 +9,8 @@ test('example.com homepage loads with correct content', async ({ page, usePerfCo
   await expect(page.locator('p a')).toHaveAttribute('href', 'https://iana.org/domains/example');
 });
 
-test('login and check app', async ({ page, usePerfContext }) => {
-  usePerfContext({ name: 'login', env: 'prod', version: '1.0.0' });
+test('login and navigate to ESM', async ({ page, usePerfContext }) => {
+  usePerfContext({ name: 'login-esm', env: 'prod', version: '1.0.0' });
 
   const loginUrl = process.env.LOGIN_URL!;
   const appsUrl  = process.env.APPS_URL!;
@@ -28,19 +28,7 @@ test('login and check app', async ({ page, usePerfContext }) => {
   await authDone;
 
   await page.goto(appsUrl);
-  await expect(page.locator('text=ForumIdM')).toBeVisible();
+  await expect(page.locator('text=Meine Anwendungen')).toBeVisible();
 
-  const startenBtn = page.locator('.btn.btn-primary', { hasText: 'Starten' });
-  if (await startenBtn.count() > 0) {
-    await startenBtn.first().click();
-  }
-
-  await page.waitForTimeout(2000);
-
-  const updateBtn = page.locator('.btn.btn-primary', { hasText: 'Update starten' });
-  if (await updateBtn.count() > 0) {
-    await updateBtn.first().click();
-  }
-
-  await expect(page.locator('text=ForumIdM')).toBeVisible();
+  await page.locator('.g-asw-desktop-item-label', { hasText: /^ESM$/ }).click();
 });

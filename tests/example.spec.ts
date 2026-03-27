@@ -20,8 +20,10 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   await page.goto(loginUrl);
   await page.locator('#login').fill(user);
   await page.locator('#passwd').fill(password);
-  await page.locator('#submit-button').click();
-  await page.waitForURL(url => url.href !== loginUrl);
+  await Promise.all([
+    page.waitForLoadState('domcontentloaded'),
+    page.locator('#submit-button').click(),
+  ]);
 
   await page.goto(appsUrl);
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible();

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+echo "=== Environment Check ==="
+echo ""
+
+# Check nvm
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+  . "$HOME/.nvm/nvm.sh"
+  echo "✓ nvm $(nvm --version)"
+else
+  echo "✗ nvm not installed → run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash"
+fi
+
+# Check node
+if command -v node &>/dev/null; then
+  echo "✓ node $(node --version)"
+else
+  echo "✗ node not installed → run: nvm install 20"
+fi
+
+# Check npm
+if command -v npm &>/dev/null; then
+  echo "✓ npm $(npm --version)"
+else
+  echo "✗ npm not found"
+fi
+
+# Check node_modules
+if [ -d "node_modules" ]; then
+  echo "✓ node_modules installed"
+else
+  echo "✗ node_modules missing → run: npm install"
+fi
+
+# Check playwright
+if command -v npx &>/dev/null && npx playwright --version &>/dev/null 2>&1; then
+  echo "✓ playwright $(npx playwright --version)"
+else
+  echo "✗ playwright not found → run: npm install"
+fi
+
+# Check chromium
+CHROMIUM_PATH="$HOME/Library/Caches/ms-playwright"
+if [ -d "$CHROMIUM_PATH" ] && [ "$(ls -A $CHROMIUM_PATH)" ]; then
+  echo "✓ playwright browsers installed"
+else
+  echo "✗ playwright browsers missing → run: npx playwright install chromium"
+fi
+
+# Check postgres (optional)
+if command -v psql &>/dev/null; then
+  echo "✓ postgres $(psql --version)"
+else
+  echo "- postgres not installed (optional, CSV mode works without it)"
+fi
+
+echo ""
+echo "=== Done ==="

@@ -13,20 +13,17 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   usePerfContext({ name: 'login-esm', env: 'prod', version: '1.0.0' });
 
   const loginUrl = process.env.LOGIN_URL!;
-  const appsUrl  = process.env.APPS_URL!;
   const user     = process.env.LOGIN_USER!;
   const password = process.env.LOGIN_PASSWORD!;
 
   await page.goto(loginUrl);
+  await page.locator('#login').waitFor({ state: 'visible' });
   await page.locator('#login').fill(user);
+  await page.locator('#passwd').waitFor({ state: 'visible' });
   await page.locator('#passwd').fill(password);
-  await Promise.all([
-    page.waitForLoadState('domcontentloaded'),
-    page.locator('#submit-button').click(),
-  ]);
+  await page.locator('#submit-button').click();
 
-  await page.goto(appsUrl);
-  await expect(page.locator('text=Meine Anwendungen')).toBeVisible();
+  await expect(page.locator('text=Meine Anwendungen')).toBeVisible({ timeout: 15000 });
 
   await page.getByText('ESM', { exact: true }).first().dblclick();
 });

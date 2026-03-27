@@ -47,6 +47,7 @@ export const test = base.extend<PerfFixtures>({
       }));
 
       queue.enqueue(queueRecords);
+      await queue.flush();
 
       // Optional verbose output
       if (process.env.PERF_VERBOSE === 'true') {

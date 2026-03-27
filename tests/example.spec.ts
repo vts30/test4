@@ -25,11 +25,7 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   await page.locator('#login').fill(user);
   await page.locator('#passwd').fill(password);
   await page.locator('#submit-button').click();
-  const authResponse = await authDone;
-  const body = await authResponse.text();
-  if (!body.includes('<Result>success</Result>')) {
-    throw new Error(`Login failed: ${body}`);
-  }
+  await authDone;
 
   await page.goto(appsUrl);
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible();

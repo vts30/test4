@@ -17,17 +17,19 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   const user     = process.env.LOGIN_USER!;
   const password = process.env.LOGIN_PASSWORD!;
 
-  page.on('response', res => {
-    if (res.request().method() === 'POST') {
-      console.log('[POST response]', res.url(), res.status());
-    }
-  });
+  const authDone = page.waitForResponse(
+    res => res.url().includes('/nf/auth/doAuthentication.do') && res.request().method() === 'POST'
+  );
 
   await page.goto(loginUrl);
   await page.locator('#login').fill(user);
   await page.locator('#passwd').fill(password);
   await page.locator('#submit-button').click();
-  await page.waitForLoadState('domcontentloaded');
+  const authResponse = await authDone;
+  const body = await authResponse.text();
+  if (!body.includes('<Result>success</Result>')) {
+    throw new Error(`Login failed: ${body}`);
+  }
 
   await page.goto(appsUrl);
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible();

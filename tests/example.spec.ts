@@ -30,5 +30,13 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   await page.goto(appsUrl);
   await expect(page.locator('text=Meine Anwendungen')).toBeVisible();
 
-  await page.getByText('ESM', { exact: true }).first().dblclick();
+  await page.evaluate(() => {
+    const labels = document.querySelectorAll('.gwt-Label.g-asw-desktop-item-label');
+    for (const label of labels) {
+      if (label.textContent?.trim() === 'ESM') {
+        label.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+        break;
+      }
+    }
+  });
 });

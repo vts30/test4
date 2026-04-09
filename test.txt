@@ -1,0 +1,21 @@
+Root cause: CPU + I/O spike around ~14:00–14:15
+
+Key findings:
+
+CPU hit 100% (image 3, system performance graph) — the process maxed out CPU around 14:00–14:15, correlating with the reported slowdown.
+
+I/O spike at the same time (last image) — both I/O read and write spiked to ~200 MB/s simultaneously with the CPU spike. This is a strong indicator of a GC event or heavy disk operation.
+
+Java process with 18.7 GB memory — the container runs a Java (CB-Q) process with very high heap usage. A full garbage collection (Full GC) would explain both the CPU spike and the sudden I/O burst at the same time. Full GC on a large heap causes:
+
+Stop-the-world pause → app becomes unresponsive
+High CPU for mark/sweep/compact
+Heavy I/O if GC writes to disk (heap dump, GC logs, swapping)
+"Container must be restarted" warning from Dynatrace — the agent can't fully instrument the process, meaning you may be missing deeper metrics (e.g., GC pause duration, heap breakdown).
+
+Recommended next steps:
+
+Enable GC logging on the JVM (-Xlog:gc*) and check for Full GC events around 14:00
+Check if heap is properly sized — 18.7 GB is high; if the old generation fills up, Full GC triggers
+Restart the container so Dynatrace can provide full process/service-level metrics
+Check if any scheduled job (batch, report, import) runs at 14:00

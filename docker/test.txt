@@ -1,0 +1,25 @@
+{{- define "forumsuite.common.java.gcOpts" -}}
+{{- $sizes := dict
+  "nano"    "-XX:+UseSerialGC"
+  "micro"   "-XX:+UseSerialGC"
+  "small"   "-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:InitiatingHeapOccupancyPercent=45"
+  "medium"  "-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:InitiatingHeapOccupancyPercent=40"
+  "large"   "-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:InitiatingHeapOccupancyPercent=35 -XX:G1HeapRegionSize=16M"
+  "xlarge"  "-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:InitiatingHeapOccupancyPercent=35 -XX:G1HeapRegionSize=16M"
+  "2xlarge" "-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:InitiatingHeapOccupancyPercent=35 -XX:G1HeapRegionSize=32M"
+}}
+{{- index $sizes .type -}}
+{{- end -}}
+
+{{- define "forumsuite.common.java.extraOpts" -}}
+{{- $sizes := dict
+  "nano"    "-XX:MaxMetaspaceSize=128M -Xss256k"
+  "micro"   "-XX:MaxMetaspaceSize=256M -Xss256k"
+  "small"   "-XX:MaxMetaspaceSize=512M -Xss512k -XX:ReservedCodeCacheSize=256M"
+  "medium"  "-XX:MaxMetaspaceSize=512M -Xss512k -XX:ReservedCodeCacheSize=256M"
+  "large"   "-XX:MaxMetaspaceSize=512M -Xss512k -XX:ReservedCodeCacheSize=256M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/forumsuite/heapdump.hprof"
+  "xlarge"  "-XX:MaxMetaspaceSize=512M -Xss512k -XX:ReservedCodeCacheSize=256M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/forumsuite/heapdump.hprof"
+  "2xlarge" "-XX:MaxMetaspaceSize=1G   -Xss512k -XX:ReservedCodeCacheSize=512M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/forumsuite/heapdump.hprof"
+}}
+{{- index $sizes .type -}}
+{{- end -}}

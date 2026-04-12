@@ -23,3 +23,13 @@
 }}
 {{- index $sizes .type -}}
 {{- end -}}
+
+
+
+env:
+  - name: JAVA_XMX
+    value: {{ include "forumsuite.common.java.xmx" (dict "type" .Values.forumsuite.size) }}
+  - name: JAVA_GC_OPTS
+    value: {{ include "forumsuite.common.java.gcOpts" (dict "type" .Values.forumsuite.size) }}
+  - name: JAVA_EXTRA_OPTS
+  

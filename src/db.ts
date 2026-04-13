@@ -18,6 +18,13 @@ export function getPool(): Pool {
         database: dbCfg.dbName,
       });
 
+  const schema = process.env.PG_SCHEMA;
+  if (schema) {
+    pool.on('connect', (client) => {
+      client.query(`SET search_path TO ${schema}`);
+    });
+  }
+
   return pool;
 }
 

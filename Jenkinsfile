@@ -64,7 +64,8 @@ pipeline {
                                         TEST_ENV=${TEST_ENV} \
                                         PG_HOST=DUMMY_PG_HOST \
                                         PG_PORT=5432 \
-                                        PG_DB=perf_metrics \
+                                        PG_DB=db_regtest_timeseries \
+                                        PG_SCHEMA=regtest_timeseries \
                                         PERF_VERSION=${ESMSUITE_VERSION} \
                                         PERF_ENV=${TEST_ENV} \
                                         npx playwright test

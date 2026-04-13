@@ -38,7 +38,7 @@ pipeline {
                 echo 'Running Playwright regression tests...'
                 dir('playwright-tests') {
                     sh 'npm config set strict-ssl false && npm config set registry DUMMY_INTERNAL_NPM_REGISTRY && npm install --cache .npm'
-                    sh 'PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright ./node_modules/.bin/playwright install chromium'
+                    sh 'HTTPS_PROXY=DUMMY_PROXY_URL PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright ./node_modules/.bin/playwright install chromium'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'DUMMY_ESM_LOGIN_CREDENTIALS_ID',

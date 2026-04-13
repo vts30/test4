@@ -6,7 +6,7 @@ export default defineConfig({
   reporter: [['html', { open: 'never' }]],
   use: {
     headless: true,
-    channel: process.env.BROWSER_CHANNEL ?? undefined,
+    channel: process.env.BROWSER_CHANNEL ?? 'chrome',
   },
   globalTeardown: './src/globalTeardown.ts',
 });

@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'cing-base' }
+    agent { label 'cing-base-ext' }
 
     environment {
         ESMSUITE_VERSION   = '20260331122345666'
@@ -38,7 +38,7 @@ pipeline {
                 echo 'Running Playwright regression tests...'
                 dir('playwright-tests') {
                     sh 'npm config set strict-ssl false && npm config set registry DUMMY_INTERNAL_NPM_REGISTRY && npm install --cache .npm'
-                    sh 'HTTPS_PROXY=DUMMY_PROXY_URL PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright ./node_modules/.bin/playwright install chromium'
+                    sh 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 ./node_modules/.bin/playwright install chromium || true'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'DUMMY_ESM_LOGIN_CREDENTIALS_ID',

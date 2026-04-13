@@ -37,7 +37,7 @@ pipeline {
             steps {
                 echo 'Running Playwright regression tests...'
                 dir('playwright-tests') {
-                    sh 'npm install'
+                    sh 'npm install --cache .npm'
                     sh 'npx playwright install chromium'
                     withCredentials([
                         usernamePassword(

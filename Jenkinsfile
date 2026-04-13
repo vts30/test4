@@ -34,37 +34,46 @@ pipeline {
         }
 
         stage('Run Playwright Regression Tests') {
-            steps {
-                echo 'Running Playwright regression tests...'
-                dir('playwright-tests') {
-                    sh 'npm install'
-                    sh 'npx playwright install chromium'
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'DUMMY_ESM_LOGIN_CREDENTIALS_ID',
-                            usernameVariable: 'LOGIN_USER',
-                            passwordVariable: 'LOGIN_PASSWORD'
-                        ),
-                        usernamePassword(
-                            credentialsId: 'DUMMY_PG_CREDENTIALS_ID',
-                            usernameVariable: 'PG_USER',
-                            passwordVariable: 'PG_PASSWORD'
-                        )
-                    ]) {
-                        sh """
-                            LOGIN_URL=DUMMY_LOGIN_URL \
-                            APPS_URL=DUMMY_APPS_URL \
-                            PG_HOST=DUMMY_PG_HOST \
-                            PG_PORT=5432 \
-                            PG_DB=perf_metrics \
-                            PERF_VERSION=${ESMSUITE_VERSION} \
-                            PERF_ENV=prod \
-                            npx playwright test
-                        """
+            matrix {
+                axes {
+                    axis {
+                        name 'TEST_ENV'
+                        values 'dev', 'staging', 'prod'
                     }
-                    junit 'test-results/e2e/*.xml'
-                    archiveArtifacts artifacts: 'perf-results.csv', allowEmptyArchive: true
-                    archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
+                }
+                stages {
+                    stage('Test') {
+                        steps {
+                            echo "Running Playwright regression tests for ${TEST_ENV}..."
+                            dir('playwright-tests') {
+                                sh 'npm install'
+                                sh 'npx playwright install chromium'
+                                withCredentials([
+                                    usernamePassword(
+                                        credentialsId: "DUMMY_ESM_LOGIN_CREDENTIALS_ID_${TEST_ENV}",
+                                        usernameVariable: 'LOGIN_USER',
+                                        passwordVariable: 'LOGIN_PASSWORD'
+                                    ),
+                                    usernamePassword(
+                                        credentialsId: 'DUMMY_PG_CREDENTIALS_ID',
+                                        usernameVariable: 'PG_USER',
+                                        passwordVariable: 'PG_PASSWORD'
+                                    )
+                                ]) {
+                                    sh """
+                                        TEST_ENV=${TEST_ENV} \
+                                        PG_HOST=DUMMY_PG_HOST \
+                                        PG_PORT=5432 \
+                                        PG_DB=perf_metrics \
+                                        PERF_VERSION=${ESMSUITE_VERSION} \
+                                        PERF_ENV=${TEST_ENV} \
+                                        npx playwright test
+                                    """
+                                }
+                                archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
+                            }
+                        }
+                    }
                 }
             }
         }

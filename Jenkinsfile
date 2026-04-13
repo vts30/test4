@@ -38,7 +38,7 @@ pipeline {
                 echo 'Running Playwright regression tests...'
                 dir('playwright-tests') {
                     sh 'npm config set strict-ssl false && npm config set registry DUMMY_INTERNAL_NPM_REGISTRY && npm install --cache .npm'
-                    sh 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 ./node_modules/.bin/playwright install --with-deps chromium || true'
+                    sh 'PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright ./node_modules/.bin/playwright install chromium'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'DUMMY_ESM_LOGIN_CREDENTIALS_ID',
@@ -60,7 +60,8 @@ pipeline {
                             PG_SCHEMA=regtest_timeseries \
                             PERF_VERSION=${ESMSUITE_VERSION} \
                             PERF_ENV=satu \
-                            BROWSER_CHANNEL=chrome \
+                            PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright \
+                            BROWSER_CHANNEL= \
                             ./node_modules/.bin/playwright test
                         """
                     }

@@ -37,7 +37,7 @@ pipeline {
             steps {
                 echo 'Running Playwright regression tests...'
                 dir('playwright-tests') {
-                    sh 'npm config set strict-ssl false && npm install --cache .npm'
+                    sh 'npm config set strict-ssl false && npm config set registry DUMMY_INTERNAL_NPM_REGISTRY && npm install --cache .npm'
                     sh 'npx playwright install chromium'
                     withCredentials([
                         usernamePassword(

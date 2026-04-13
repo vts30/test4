@@ -44,12 +44,19 @@ pipeline {
                             credentialsId: 'DUMMY_ESM_LOGIN_CREDENTIALS_ID',
                             usernameVariable: 'LOGIN_USER',
                             passwordVariable: 'LOGIN_PASSWORD'
+                        ),
+                        usernamePassword(
+                            credentialsId: 'DUMMY_PG_CREDENTIALS_ID',
+                            usernameVariable: 'PG_USER',
+                            passwordVariable: 'PG_PASSWORD'
                         )
                     ]) {
                         sh """
                             LOGIN_URL=DUMMY_LOGIN_URL \
                             APPS_URL=DUMMY_APPS_URL \
-                            PERF_CSV_PATH=./perf-results.csv \
+                            PG_HOST=DUMMY_PG_HOST \
+                            PG_PORT=5432 \
+                            PG_DB=perf_metrics \
                             PERF_VERSION=${ESMSUITE_VERSION} \
                             PERF_ENV=prod \
                             npx playwright test

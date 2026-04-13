@@ -59,7 +59,7 @@ pipeline {
                             PG_DB=db_regtest_timeseries \
                             PG_SCHEMA=regtest_timeseries \
                             PERF_VERSION=${ESMSUITE_VERSION} \
-                            PERF_ENV=prod \
+                            PERF_ENV=satu \
                             npx playwright test
                         """
                     }

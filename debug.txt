@@ -56,3 +56,35 @@ fi
 
 echo ""
 echo "=== Done ==="
+
+# Then call usePerfContext after you navigate to that page:
+#
+# test('smoke: login and navigate to ESM', async ({ page, usePerfContext }) => {
+#
+#   // 1. login
+#   await page.goto(loginUrl);
+#   await page.locator('#login').fill(user);
+#   await page.locator('#passwd').fill(password);
+#   await page.locator('#submit-button').click();
+#   await authDone;
+#
+#   // 2. navigate to ESM
+#   await page.goto(appsUrl);
+#   // ... click ESM ...
+#
+#   // 3. read version from page after navigation
+#   const softwareVersion = await page.frameLocator('#hlpInnerIframe')
+#     .locator('.version-selector')
+#     .textContent();
+#
+#   const browserVersion = page.context().browser()?.version() ?? 'unknown';
+#
+#   // 4. now set context with version
+#   usePerfContext({
+#     name: 'login-esm',
+#     env: process.env.PERF_ENV ?? 'prod',
+#     version: `app:${softwareVersion?.trim()} browser:${browserVersion}`
+#   });
+#
+#   // 5. continue rest of test...
+# });

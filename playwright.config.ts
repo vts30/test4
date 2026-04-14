@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import dotenv from 'dotenv';
 import { existsSync } from 'fs';
-if (existsSync('env.satu')) dotenv.config({ path: 'env.satu' });
+if (existsSync('.env.satu')) dotenv.config({ path: '.env.satu' });
 
 export default defineConfig({
   testDir: './tests',

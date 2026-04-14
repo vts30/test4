@@ -2,7 +2,7 @@ import { appendFileSync, existsSync } from 'fs';
 import { getPool } from './db';
 import type { PerfRecord } from './recorder';
 
-const CSV_HEADER = 'test_name,environment,version,url,method,status_code,response_time_ms,response_size_bytes,content_type,assertions,recorded_at';
+const CSV_HEADER = 'metric_name,environment,version,url,method,status_code,response_time_ms,response_size_bytes,content_type,assertions,recorded_at';
 
 function escapeCsv(value: string | number | null): string {
   if (value === null || value === undefined) return '';
@@ -75,7 +75,7 @@ export function getQueue(): Queue {
 
     const sql = `
       INSERT INTO perf_results
-        (test_name, environment, version, url, method, status_code,
+        (metric_name, environment, version, url, method, status_code,
          response_time_ms, response_size_bytes, content_type, assertions, recorded_at)
       VALUES ${values.join(', ')}
     `;

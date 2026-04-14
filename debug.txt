@@ -94,3 +94,9 @@ echo "=== Done ==="
 # FROM information_schema.columns
 # WHERE table_name = 'perf_results'
 # AND table_schema = 'regtest_timeseries';
+
+# Fix id column - add auto-increment sequence:
+# CREATE SEQUENCE IF NOT EXISTS regtest_timeseries.perf_results_id_seq;
+# ALTER TABLE regtest_timeseries.perf_results
+#   ALTER COLUMN id SET DEFAULT nextval('regtest_timeseries.perf_results_id_seq');
+# ALTER SEQUENCE regtest_timeseries.perf_results_id_seq OWNED BY regtest_timeseries.perf_results.id;

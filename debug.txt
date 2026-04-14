@@ -88,3 +88,9 @@ echo "=== Done ==="
 #
 #   // 5. continue rest of test...
 # });
+
+# Check perf_results table columns and id default:
+# SELECT column_name, column_default, data_type
+# FROM information_schema.columns
+# WHERE table_name = 'perf_results'
+# AND table_schema = 'regtest_timeseries';

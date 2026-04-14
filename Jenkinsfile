@@ -38,7 +38,8 @@ pipeline {
                 echo 'Running Playwright regression tests...'
                 dir('playwright-tests') {
                     sh 'npm config set strict-ssl false && npm config set registry DUMMY_INTERNAL_NPM_REGISTRY && npm install --cache .npm'
-                    sh 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 ./node_modules/.bin/playwright install chromium || true'
+                    sh 'which google-chrome || which chromium-browser || which chromium || echo "chrome not found in PATH"'
+                    sh 'ls /usr/bin/chrom* /usr/bin/google* 2>/dev/null || echo "not in /usr/bin"'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'DUMMY_ESM_LOGIN_CREDENTIALS_ID',

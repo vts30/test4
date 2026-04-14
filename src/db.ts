@@ -8,6 +8,9 @@ export function getPool(): Pool {
   const cfg = resolveConfig();
   const dbCfg = cfg.database;
 
+  const schema = process.env.PG_SCHEMA;
+  const searchPath = schema ? `${schema},public` : undefined;
+
   pool = dbCfg.connectionString
     ? new Pool({ connectionString: dbCfg.connectionString })
     : new Pool({
@@ -16,14 +19,8 @@ export function getPool(): Pool {
         user: dbCfg.user,
         password: dbCfg.password,
         database: dbCfg.dbName,
+        ...(searchPath && { options: `-c search_path=${searchPath}` }),
       });
-
-  const schema = process.env.PG_SCHEMA;
-  if (schema) {
-    pool.on('connect', (client) => {
-      client.query(`SET search_path TO ${schema}`);
-    });
-  }
 
   return pool;
 }

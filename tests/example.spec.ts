@@ -9,9 +9,7 @@ test('example.com homepage loads with correct content', async ({ page, usePerfCo
   await expect(page.locator('p a')).toHaveAttribute('href', 'https://iana.org/domains/example');
 });
 
-test('login and navigate to ESM', async ({ page, usePerfContext }) => {
-  usePerfContext({ name: 'login-esm', env: 'prod', version: '1.0.0' });
-
+test('login and check app', async ({ page, usePerfContext }) => {
   const loginUrl = process.env.LOGIN_URL!;
   const appsUrl  = process.env.APPS_URL!;
   const user     = process.env.LOGIN_USER!;
@@ -28,15 +26,23 @@ test('login and navigate to ESM', async ({ page, usePerfContext }) => {
   await authDone;
 
   await page.goto(appsUrl);
-  await expect(page.locator('text=Meine Anwendungen')).toBeVisible();
 
-  await page.evaluate(() => {
-    const labels = document.querySelectorAll('.gwt-Label.g-asw-desktop-item-label');
-    for (const label of labels) {
-      if (label.textContent?.trim() === 'ESM') {
-        label.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
-        break;
-      }
-    }
+  await expect(page.frameLocator('#hlpInnerIframe').locator('.mx-scrollcontainer-left').getByText('Startseite')).toBeVisible({ timeout: 20000 });
+
+  await expect(page.frameLocator('#hlpInnerIframe').locator('.mx-scrollcontainer-center').getByText('Benutzer Einstellungen')).toBeVisible({ timeout: 20000 });
+  await page.frameLocator('#hlpInnerIframe').locator('.mx-scrollcontainer-center').getByText('Benutzer Einstellungen').click();
+
+  await page.frameLocator('#hlpInnerIframe').locator('.mx-name-staticImage2').click();
+
+  const softwareVersion = await page.frameLocator('#hlpInnerIframe')
+    .locator('h4.mx-name-text1')
+    .textContent();
+
+  const browserVersion = page.context().browser()?.version() ?? 'unknown';
+
+  usePerfContext({
+    name: 'login-esm',
+    env: process.env.PERF_ENV ?? 'prod',
+    version: `app:${softwareVersion?.trim()} browser:${browserVersion}`,
   });
 });

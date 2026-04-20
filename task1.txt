@@ -1,0 +1,76 @@
+Aufgabe: Cucumber Login Performance Test
+=========================================
+
+Ziel:
+-----
+Erstellung eines Cucumber-basierten Login-Tests zur Messung der Performance
+der ESM Suite Anwendung. Die bestehenden Cucumber-Tests sollen wiederverwendet
+und mit dem Performance-Fixture erweitert werden, um HTTP-Antwortzeiten
+automatisch zu erfassen und in der Datenbank zu speichern.
+
+Hintergrund:
+------------
+Das bestehende Playwright Performance Fixture erfasst automatisch alle HTTP
+Antwortzeiten während eines Tests. Ziel ist es, diese Funktionalität auch in
+den bestehenden Cucumber-Tests zu nutzen, ohne die Tests neu schreiben zu müssen.
+
+Aufgaben:
+---------
+
+1. Analyse der bestehenden Cucumber-Testinfrastruktur (1h)
+   - Vorhandene Hooks (Before/After) prüfen
+   - Browser-Setup verstehen (Selenium, Playwright oder WebDriverIO?)
+   - World-Objekt analysieren
+   - Projektstruktur und Abhängigkeiten prüfen
+
+2. Abhängigkeiten installieren und prüfen (30min)
+   - Prüfen ob @playwright/test im Cucumber-Projekt verfügbar ist
+   - Performance Fixture als Abhängigkeit einbinden
+   - package.json anpassen falls notwendig
+
+3. Performance Recorder Hooks einbinden (1h)
+   - Before-Hook: Browser starten, Recorder initialisieren
+   - HTTP Request/Response Listener auf Seite registrieren
+   - After-Hook: Aufgezeichnete Daten in DB/CSV schreiben
+
+4. Feature-Datei erstellen (30min)
+   - Datei: esm-login-performance.feature
+   - Szenario: Login, Navigation zu ESM, Version lesen
+   - Auf Deutsch dokumentieren
+
+5. Step-Definitionen implementieren (1.5h)
+   - Login-Schritte: Benutzername, Passwort, Submit
+   - Navigation: ESM öffnen, Startseite prüfen
+   - Benutzer Einstellungen öffnen
+   - Software-Version aus der Seite lesen
+   - Browser-Version erfassen
+   - usePerfContext mit Version und Umgebung setzen
+
+6. Recorder mit bestehendem Browser verbinden (1h)
+   - Bestehende Browser-Instanz des Cucumber-Tests nutzen
+   - Playwright-Recorder an vorhandene Page-Instanz anhängen
+   - Sicherstellen dass alle HTTP-Calls erfasst werden
+
+7. Datenbankschreibung prüfen (30min)
+   - Testlauf durchführen
+   - Daten in regtest_timeseries.perf_results prüfen
+   - Felder prüfen: metric_name, environment, version, response_time_ms
+
+8. Jenkins Pipeline Integration (30min)
+   - Cucumber Performance Test nach bestehendem Cucumber-Testlauf ausführen
+   - Umgebungsvariablen setzen (LOGIN_URL, APPS_URL, PERF_ENV etc.)
+   - Artefakte archivieren
+
+9. Testen und Abnahme (30min)
+   - End-to-End Test durchführen
+   - Ergebnisse in pgAdmin prüfen
+   - Dokumentation aktualisieren
+
+Gesamtaufwand: ca. 8 Stunden
+
+Offene Fragen vor dem Start:
+-----------------------------
+1. Welches Browser-Framework nutzt Cucumber? (Selenium, Playwright, WebDriverIO?)
+2. Ist das Cucumber-Projekt im gleichen Repository oder einem anderen?
+3. Gibt es bereits Before/After Hooks im Cucumber-Projekt?
+4. Welche Umgebung soll getestet werden? (satu, dev, prod?)

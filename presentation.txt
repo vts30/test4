@@ -1,0 +1,238 @@
+ESM Suite Performance POC - Test Framework Presentation
+========================================================
+Audience: Test team who will extend the tests
+========================================================
+
+
+1. WHAT IS THIS FRAMEWORK?
+--------------------------
+A Playwright-based performance testing fixture that automatically captures
+HTTP response times during regression tests and stores them in a Postgres
+database for long-term performance tracking.
+
+Goal: Detect if a deployment made the application slower — automatically,
+after every release.
+
+
+2. TECH STACK
+-------------
+- Playwright    : Browser automation framework (Microsoft)
+- TypeScript    : Language
+- Vitest        : Unit test runner
+- PostgreSQL    : Time-series result storage (regtest_timeseries.perf_results)
+- Jenkins       : CI/CD pipeline — runs tests after each deployment
+- dotenv        : Environment configuration per environment (.env.satu)
+
+
+3. HOW PLAYWRIGHT WORKS
+-----------------------
+Playwright controls a real browser (Chrome/Chromium) programmatically.
+It simulates real user actions:
+  - page.goto()          → navigate to a URL
+  - page.locator()       → find an element
+  - .fill()              → type into a field
+  - .click()             → click a button or link
+  - .dblclick()          → double-click
+  - frameLocator()       → access content inside an iframe
+  - waitForResponse()    → wait for a specific HTTP response
+  - expect().toBeVisible() → assert element is visible
+
+Playwright also captures ALL HTTP traffic the browser makes — this is
+what our fixture uses to measure performance.
+
+
+4. WHAT IS A FIXTURE?
+---------------------
+A fixture is a reusable setup/teardown mechanism injected automatically
+into every test.
+
+Standard Playwright:
+  test('my test', async ({ page }) => { ... });
+  → 'page' is a built-in fixture
+
+Our custom fixture:
+  test('my test', async ({ page, usePerfContext }) => { ... });
+  → 'usePerfContext' is our custom fixture
+
+What our fixture does automatically:
+  BEFORE test  → attaches HTTP request/response listeners to the browser
+  DURING test  → silently records every HTTP call and response time
+  AFTER test   → flushes all captured data to Postgres or CSV
+
+The developer does NOT need to add any recording code in the test.
+
+
+5. WHAT THE FIXTURE CAPTURES PER HTTP REQUEST
+----------------------------------------------
+For every HTTP request made by the browser during the test:
+
+  - metric_name        : Test name (from usePerfContext)
+  - environment        : e.g. satu, prod, dev
+  - version            : App version + browser version
+  - url                : Full request URL
+  - method             : GET, POST, etc.
+  - status_code        : HTTP status (200, 404, 500...)
+  - response_time_ms   : Time from request to response in milliseconds
+  - response_size_bytes: Size of the response
+  - content_type       : e.g. application/json, text/html
+  - assertions         : Captured headers (x-request-id, x-trace-id, etc.)
+  - recorded_at        : Timestamp of the measurement
+
+
+6. CURRENT TEST — login and check app
+--------------------------------------
+Location: tests/example.spec.ts
+
+Steps:
+  1. Navigate to login page (LOGIN_URL)
+  2. Fill username (#login) and password (#passwd)
+  3. Click submit button (#submit-button)
+  4. Wait for authentication response (/nf/auth/doAuthentication.do)
+  5. Navigate to apps page (APPS_URL)
+  6. Wait for 'Startseite' to be visible in iframe (#hlpInnerIframe)
+  7. Click 'Benutzer Einstellungen'
+  8. Click info icon (.mx-name-staticImage2) to open version popup
+  9. Read software version from page (h4.mx-name-text1)
+  10. Read browser version from Playwright
+  11. Set usePerfContext with metric name, environment and version
+
+All HTTP calls during these steps are automatically captured and stored.
+
+
+7. CONFIGURATION
+----------------
+Environment variables (set in .env.satu or Jenkins):
+
+  LOGIN_URL       : Login page URL
+  APPS_URL        : Application URL after login
+  LOGIN_USER      : Username
+  LOGIN_PASSWORD  : Password
+  PERF_ENV        : Environment tag (e.g. satu)
+  PERF_VERSION    : Version override (optional)
+  PERF_CSV_PATH   : If set, writes to CSV instead of Postgres
+  PG_HOST         : Postgres host
+  PG_PORT         : Postgres port (default 5432)
+  PG_DB           : Database name (db_regtest_timeseries)
+  PG_SCHEMA       : Schema name (regtest_timeseries)
+  PG_USER         : Postgres username
+  PG_PASSWORD     : Postgres password
+  CHROME_PATH     : Path to Chrome binary (default /usr/bin/google-chrome)
+
+
+8. DATABASE
+-----------
+Database : db_regtest_timeseries
+Schema   : regtest_timeseries
+Table    : perf_results
+
+Columns:
+  id, metric_name, environment, version, url, method,
+  status_code, response_time_ms, response_size_bytes,
+  content_type, assertions, recorded_at
+
+Useful queries:
+
+  -- Slowest requests in last 24 hours
+  SELECT metric_name, url, response_time_ms, recorded_at
+  FROM regtest_timeseries.perf_results
+  WHERE recorded_at > NOW() - INTERVAL '24 hours'
+  ORDER BY response_time_ms DESC
+  LIMIT 20;
+
+  -- Average response time per version
+  SELECT version, ROUND(AVG(response_time_ms)) AS avg_ms, COUNT(*) AS requests
+  FROM regtest_timeseries.perf_results
+  GROUP BY version
+  ORDER BY version DESC;
+
+
+9. JENKINS PIPELINE
+-------------------
+Stages:
+  1. Deploy ESMSuite
+  2. Prepare Environments for Regression Testing
+  3. Checkout Playwright Regression Tests  (from git repo)
+  4. Run Playwright Regression Tests       (our tests)
+  5. Run Performance Tests with Lighthouse
+  6. Persist Test Results to Time-Series Database
+  7. Generate High-Level Reports
+
+Our stage automatically:
+  - Installs npm dependencies
+  - Runs tests using system Chrome
+  - Archives playwright-report and perf-results
+
+
+10. HOW TO RUN LOCALLY
+-----------------------
+  # Install dependencies
+  npm install
+  npx playwright install chromium
+
+  # Run with CSV output (no DB needed)
+  PERF_CSV_PATH=./perf-results.csv npx playwright test
+
+  # Run with headed browser (visible)
+  npx playwright test --headed
+
+  # Run specific test
+  npx playwright test --grep "login and check app"
+
+  # Run with verbose HTTP output
+  PERF_VERBOSE=true npx playwright test
+
+
+11. HOW TO EXTEND — ADDING A NEW TEST
+--------------------------------------
+Step 1: Open tests/example.spec.ts
+
+Step 2: Add a new test following this pattern:
+
+  test('my new test', async ({ page, usePerfContext }) => {
+
+    // Set context — will be stored with all measurements
+    usePerfContext({
+      name: 'my-test-name',
+      env: process.env.PERF_ENV ?? 'satu',
+      version: 'see version from page'
+    });
+
+    // Write your Playwright steps here
+    await page.goto(process.env.APPS_URL!);
+    await page.frameLocator('#hlpInnerIframe')
+      .locator('.my-element')
+      .click();
+
+    // All HTTP calls are captured automatically
+  });
+
+Step 3: Run the test locally to verify
+Step 4: Commit and push — Jenkins will run it automatically
+
+
+12. PROJECT STRUCTURE
+----------------------
+  src/
+    fixture.ts        : Custom Playwright fixture (auto-records HTTP)
+    recorder.ts       : Intercepts request/response, calculates timings
+    queue.ts          : In-memory buffer, flushes to DB or CSV
+    db.ts             : Postgres connection pool
+    config.ts         : Resolves config from env vars / perf.config.json
+    schema.ts         : Creates DB table (npm run db:init)
+    globalTeardown.ts : Closes DB pool after all tests
+
+  tests/
+    example.spec.ts   : Current ESM smoke test
+    unit/             : Unit tests for recorder, queue, config
+
+  db/
+    init.sql          : DDL for perf_results table
+
+  Jenkinsfile         : CI/CD pipeline definition
+  playwright.config.ts: Playwright configuration
+  .env.satu           : Local environment variables (not in git)
+
+
+========================================================
+END OF PRESENTATION
+========================================================

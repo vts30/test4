@@ -10,7 +10,7 @@ export default defineConfig({
   use: {
     headless: true,
     launchOptions: {
-      executablePath: process.env.CHROME_PATH ?? '/usr/bin/google-chrome',
+      executablePath: process.env.CHROME_PATH,
     },
   },
   globalTeardown: './src/globalTeardown.ts',

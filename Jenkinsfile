@@ -60,8 +60,7 @@ pipeline {
                             PG_SCHEMA=regtest_timeseries \
                             PERF_VERSION=${ESMSUITE_VERSION} \
                             PERF_ENV=satu \
-                            PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright \
-                            BROWSER_CHANNEL= \
+                            CHROME_PATH=/usr/bin/google-chrome \
                             ./node_modules/.bin/playwright test
                         """
                     }

@@ -1,0 +1,94 @@
+ESM Suite Performance Fixture — Architecture Diagram
+=====================================================
+
+
+1. TEST RUN
+-----------
+
+  +------------+   clicks / navigation   +-------------------+
+  | Test       | ----------------------> | Chrome Browser    |
+  | Script     |                         | (Playwright)      |
+  +------------+                         +--------+----------+
+       |                                          | HTTP calls
+       | usePerfContext(                           v
+       |   name, env, version)       +------------------------+
+       |                             | ESM Suite              |
+       +-------------------------->  | Application            |
+                                     +------------------------+
+
+
+2. FIXTURE (runs automatically — no code needed in the test)
+------------------------------------------------------------
+
+  page.on('request')  --> Recorder  --> Queue (buffer)
+  page.on('response') --> measures        |
+                          time delta      | flush()
+                                          v
+                             +------------------------+
+                             | PostgreSQL             |
+                             | regtest_timeseries     |
+                             | .perf_results          |
+                             +------------------------+
+                             (or CSV file for local dev)
+
+  Per HTTP call stored:
+    url, method, status_code, response_time_ms,
+    version, environment, recorded_at
+
+
+3. AFTER EVERY DEPLOYMENT (Jenkins)
+------------------------------------
+
+  Deploy --> Run Tests --> DB --> Compare versions
+
+  Question: "Did this release make the app slower?"
+  Answer:   SELECT AVG(response_time_ms) GROUP BY version
+
+
+4. DATA FLOW (step by step)
+----------------------------
+
+  [1] Test starts
+       |
+       v
+  [2] Fixture BEFORE: attaches request/response listeners to browser
+       |
+       v
+  [3] Test runs: login, navigate, read version, call usePerfContext()
+       |
+       | (every HTTP call browser makes is silently captured)
+       v
+  [4] Fixture AFTER: collects all records, tags with name/env/version
+       |
+       v
+  [5] Queue flushes to PostgreSQL (or CSV)
+       |
+       v
+  [6] perf_results table has one row per HTTP request
+
+
+5. KEY FILES
+------------
+
+  src/fixture.ts    -- wires request/response listeners, calls flush
+  src/recorder.ts   -- measures time between request and response
+  src/queue.ts      -- buffers records, writes to DB or CSV
+  src/db.ts         -- PostgreSQL connection pool
+  tests/example.spec.ts -- the actual login test
+
+
+6. HOW TO QUERY RESULTS
+------------------------
+
+  -- Average response time per version
+  SELECT version, ROUND(AVG(response_time_ms)) AS avg_ms, COUNT(*) AS requests
+  FROM regtest_timeseries.perf_results
+  GROUP BY version
+  ORDER BY version DESC;
+
+  -- Slowest requests in last 24 hours
+  SELECT url, response_time_ms, recorded_at
+  FROM regtest_timeseries.perf_results
+  WHERE recorded_at > NOW() - INTERVAL '24 hours'
+  ORDER BY response_time_ms DESC
+  LIMIT 20;

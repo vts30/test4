@@ -2,11 +2,11 @@ import dotenv from 'dotenv';
 import { existsSync } from 'fs';
 import { Before, After, BeforeAll, AfterAll, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium, Browser, Request, Response } from '@playwright/test';
-import { createRecorder } from '../../src/recorder';
-import { getQueue } from '../../src/queue';
-import { createContextSetter } from '../../src/context';
-import { resolveConfig } from '../../src/config';
-import { closePool } from '../../src/db';
+import { createRecorder } from '../perf-lib/recorder';
+import { getQueue } from '../perf-lib/queue';
+import { createContextSetter } from '../perf-lib/context';
+import { resolveConfig } from '../perf-lib/config';
+import { closePool } from '../perf-lib/db';
 import { PerfWorld } from './world';
 
 if (existsSync('.env.satu')) dotenv.config({ path: '.env.satu' });

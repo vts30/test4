@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createRecorder } from '../../src/recorder';
+import { createRecorder } from '../../packages/perf-lib/recorder';
 
 describe('createRecorder', () => {
   it('returns an empty records array initially', () => {

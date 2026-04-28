@@ -1,8 +1,8 @@
 import { test as base, expect } from '@playwright/test';
-import { createRecorder } from './recorder';
-import { getQueue } from './queue';
-import { resolveConfig } from './config';
-import { createContextSetter, type UsePerfContext } from './context';
+import { createRecorder } from '../perf-lib/recorder';
+import { getQueue } from '../perf-lib/queue';
+import { resolveConfig } from '../perf-lib/config';
+import { createContextSetter, type UsePerfContext } from '../perf-lib/context';
 
 type PerfFixtures = {
   usePerfContext: UsePerfContext;

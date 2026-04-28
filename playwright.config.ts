@@ -13,5 +13,5 @@ export default defineConfig({
       executablePath: process.env.CHROME_PATH,
     },
   },
-  globalTeardown: './src/globalTeardown.ts',
+  globalTeardown: './packages/perf-playwright/globalTeardown.ts',
 });

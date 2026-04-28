@@ -17,7 +17,7 @@ describe('resolveConfig', () => {
   });
 
   it('returns defaults when no env vars or config file', async () => {
-    const { resolveConfig } = await import('../../src/config');
+    const { resolveConfig } = await import('../../packages/perf-lib/config');
     const cfg = resolveConfig();
     expect(cfg.environment).toBe('local');
     expect(cfg.version).toBe('unknown');
@@ -29,7 +29,7 @@ describe('resolveConfig', () => {
     process.env.PERF_ENV = 'staging';
     process.env.PERF_VERSION = '2.0.0';
     process.env.PG_HOST = 'db.example.com';
-    const { resolveConfig } = await import('../../src/config');
+    const { resolveConfig } = await import('../../packages/perf-lib/config');
     const cfg = resolveConfig();
     expect(cfg.environment).toBe('staging');
     expect(cfg.version).toBe('2.0.0');

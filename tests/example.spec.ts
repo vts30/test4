@@ -1,4 +1,4 @@
-import { test, expect } from '../src/fixture';
+import { test, expect } from '../packages/perf-playwright/fixture';
 
 test('example.com homepage loads with correct content', async ({ page, usePerfContext }) => {
   usePerfContext({ name: 'example-com-homepage', env: 'prod', version: '1.0.0' });

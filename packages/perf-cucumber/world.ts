@@ -1,7 +1,7 @@
 import { World, setWorldConstructor, IWorldOptions } from '@cucumber/cucumber';
 import { BrowserContext, Page, Request, Response } from '@playwright/test';
-import { Recorder } from '../../src/recorder';
-import { UsePerfContext, PerfContext } from '../../src/context';
+import { Recorder } from '../perf-lib/recorder';
+import { UsePerfContext, PerfContext } from '../perf-lib/context';
 
 export class PerfWorld extends World {
   browserContext!: BrowserContext;

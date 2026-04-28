@@ -1,6 +1,6 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
-import { PerfWorld } from '../support/world';
+import { PerfWorld } from '../../packages/perf-cucumber/world';
 
 Given('the login page is open', async function (this: PerfWorld) {
   await this.page.goto(process.env.LOGIN_URL!);

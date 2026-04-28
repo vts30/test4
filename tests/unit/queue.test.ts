@@ -14,13 +14,13 @@ describe('queue', () => {
   });
 
   it('starts empty', async () => {
-    const { getQueue } = await import('../../src/queue');
+    const { getQueue } = await import('../../packages/perf-lib/queue');
     const q = getQueue();
     expect(q.size()).toBe(0);
   });
 
   it('enqueue increases size', async () => {
-    const { getQueue } = await import('../../src/queue');
+    const { getQueue } = await import('../../packages/perf-lib/queue');
     const q = getQueue();
     q.enqueue([{
       testName: 'test', environment: 'local', version: '1.0',
@@ -32,8 +32,8 @@ describe('queue', () => {
 
   it('flush empties the queue and calls insert', async () => {
     const mockInsert = vi.fn().mockResolvedValue(undefined);
-    vi.doMock('../../src/db', () => ({ getPool: () => ({ query: mockInsert }) }));
-    const { getQueue } = await import('../../src/queue');
+    vi.doMock('../../packages/perf-lib/db', () => ({ getPool: () => ({ query: mockInsert }) }));
+    const { getQueue } = await import('../../packages/perf-lib/queue');
     const q = getQueue();
     q.enqueue([{
       testName: 'test', environment: 'local', version: '1.0',
@@ -49,8 +49,8 @@ describe('queue', () => {
     const csvPath = join(tmpdir(), `perf-test-${Date.now()}.csv`);
     process.env.PERF_CSV_PATH = csvPath;
     const mockInsert = vi.fn().mockResolvedValue(undefined);
-    vi.doMock('../../src/db', () => ({ getPool: () => ({ query: mockInsert }) }));
-    const { getQueue } = await import('../../src/queue');
+    vi.doMock('../../packages/perf-lib/db', () => ({ getPool: () => ({ query: mockInsert }) }));
+    const { getQueue } = await import('../../packages/perf-lib/queue');
     const q = getQueue();
     q.enqueue([{
       testName: 'test', environment: 'local', version: '1.0',
@@ -66,7 +66,7 @@ describe('queue', () => {
   it('flush writes CSV header and row when PERF_CSV_PATH is set', async () => {
     const csvPath = join(tmpdir(), `perf-test-${Date.now()}.csv`);
     process.env.PERF_CSV_PATH = csvPath;
-    const { getQueue } = await import('../../src/queue');
+    const { getQueue } = await import('../../packages/perf-lib/queue');
     const q = getQueue();
     q.enqueue([{
       testName: 'my-test', environment: 'ci', version: '2.0',
@@ -85,7 +85,7 @@ describe('queue', () => {
   it('flush appends rows without repeating header when file already exists', async () => {
     const csvPath = join(tmpdir(), `perf-test-${Date.now()}.csv`);
     process.env.PERF_CSV_PATH = csvPath;
-    const { getQueue } = await import('../../src/queue');
+    const { getQueue } = await import('../../packages/perf-lib/queue');
     const q = getQueue();
     const record = {
       testName: 'test', environment: 'local', version: '1.0',
@@ -105,9 +105,9 @@ describe('queue', () => {
   });
 
   it('flush warns and continues if DB is unavailable', async () => {
-    vi.doMock('../../src/db', () => ({ getPool: () => ({ query: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')) }) }));
+    vi.doMock('../../packages/perf-lib/db', () => ({ getPool: () => ({ query: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')) }) }));
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { getQueue } = await import('../../src/queue');
+    const { getQueue } = await import('../../packages/perf-lib/queue');
     const q = getQueue();
     q.enqueue([{
       testName: 'test', environment: 'local', version: '1.0',

@@ -7,7 +7,7 @@
     "test:e2e": "playwright test",
     "test:cucumber": "TS_NODE_PROJECT=tsconfig.cucumber.json cucumber-js",
     "test": "npm run test:unit && npm run test:e2e",
-    "db:init": "ts-node src/schema.ts"
+    "db:init": "ts-node packages/perf-lib/schema.ts"
   },
   "dependencies": {
     "pg": "^8.13.3"

@@ -19,19 +19,20 @@ When('the user logs in with valid credentials', async function (this: PerfWorld)
 
 When('the user navigates to the apps page', async function (this: PerfWorld) {
   await this.page.goto(process.env.APPS_URL!);
+  await this.page.waitForLoadState('networkidle');
 });
 
 Then('the Startseite navigation item is visible', async function (this: PerfWorld) {
   await expect(
     this.page
-      .frameLocator('#hlpInnerIframe')
+      .frameLocator('#ihpInnerIframe')
       .locator('.mx-scrollcontainer-left')
       .getByText('Startseite'),
   ).toBeVisible({ timeout: 20000 });
 });
 
 When('the user opens Benutzer Einstellungen', async function (this: PerfWorld) {
-  const frame = this.page.frameLocator('#hlpInnerIframe');
+  const frame = this.page.frameLocator('#ihpInnerIframe');
   await expect(
     frame.locator('.mx-scrollcontainer-center').getByText('Benutzer Einstellungen'),
   ).toBeVisible({ timeout: 20000 });
@@ -41,7 +42,7 @@ When('the user opens Benutzer Einstellungen', async function (this: PerfWorld) {
 
 Then('the software version and browser version are recorded', async function (this: PerfWorld) {
   const softwareVersion = await this.page
-    .frameLocator('#hlpInnerIframe')
+    .frameLocator('#ihpInnerIframe')
     .locator('h4.mx-name-text1')
     .textContent();
 

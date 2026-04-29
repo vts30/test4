@@ -1,0 +1,46 @@
+CSV / Database Fields - Performance Test Records
+=================================================
+
+Each HTTP request made during a test produces one row with the following fields:
+
+Field               Example                          Explanation
+------------------  -------------------------------  --------------------------------------------------
+metric_name         login-esm                        Name of the test scenario.
+                                                     Set via usePerfContext({ name: ... })
+
+environment         prod                             Which environment was tested.
+                                                     Set via PERF_ENV env var or usePerfContext({ env: ... })
+
+version             app:3.2.1 browser:120.0          App version + browser version combined.
+                                                     Set via usePerfContext({ version: ... })
+
+url                 https://bank.de/nf/auth/login    Full URL of the HTTP request captured during the test.
+
+method              GET / POST                       HTTP method used for the request.
+
+status_code         200 / 401 / 500                  HTTP response status code.
+
+response_time_ms    342                              How long the request took in milliseconds.
+                                                     Measured from request sent to response received.
+
+response_size_bytes 15420                            Size of the response body in bytes.
+                                                     Taken from the content-length response header.
+                                                     Empty if header is not present.
+
+content_type        application/json                 Type of the response data (JSON, HTML, XML, etc.)
+                                                     Taken from the content-type response header.
+
+assertions          {"x-trace-id":"abc123"}          Captured response headers for tracing and debugging.
+                                                     Headers captured: x-request-id, x-trace-id,
+                                                     cache-control, etag.
+                                                     Stored as JSON.
+
+recorded_at         2026-04-29T10:00:00.000Z         Timestamp when the record was written to DB/CSV.
+
+
+Notes
+-----
+- One test run produces one row per HTTP request (e.g. 193 rows for a login flow).
+- metric_name, environment, and version are the same for all rows in one test run.
+- response_size_bytes can be empty if the server does not send a content-length header.
+- assertions only contains headers that were actually present in the response.

@@ -17,7 +17,7 @@ let browser: Browser;
 
 BeforeAll(async function () {
   browser = await chromium.launch({
-    headless: true,
+    headless: process.env.HEADLESS !== 'false',
     executablePath: process.env.CHROME_PATH || undefined,
   });
   getQueue().start();

@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { existsSync } from 'fs';
 import { Before, After, BeforeAll, AfterAll, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium, Browser, Request, Response } from '@playwright/test';
-import { createRecorder } from '../perf-lib/recorder';
+import { createRecorder, type PerfRecord } from '../perf-lib/recorder';
 import { getQueue } from '../perf-lib/queue';
 import { createContextSetter } from '../perf-lib/context';
 import { resolveConfig } from '../perf-lib/config';
@@ -58,7 +58,7 @@ After(async function (this: PerfWorld) {
   const version = ctx?.version ?? config.version;
 
   const queue = getQueue();
-  const records = this.recorder.records.map((r) => ({ ...r, testName, environment, version }));
+  const records = this.recorder.records.map((r: PerfRecord) => ({ ...r, testName, environment, version }));
   queue.enqueue(records);
   await queue.flush();
 

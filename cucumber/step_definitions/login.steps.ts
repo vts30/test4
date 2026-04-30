@@ -32,10 +32,10 @@ Then('the Startseite navigation item is visible', async function (this: PerfWorl
 
 When('the user opens Benutzer Einstellungen', async function (this: PerfWorld) {
   const frame = this.page.frameLocator('#ihpInnerIframe');
+  await frame.locator('.mx-scrollcontainer-left').getByText('Benutzer Einstellungen').click();
   await expect(
     frame.locator('.mx-scrollcontainer-center').getByText('Benutzer Einstellungen'),
   ).toBeVisible({ timeout: 20000 });
-  await frame.locator('.mx-scrollcontainer-center').getByText('Benutzer Einstellungen').click();
   await frame.locator('.mx-name-staticImage2').click();
 });
 

@@ -19,7 +19,6 @@ When('the user logs in with valid credentials', async function (this: PerfWorld)
 
 When('the user navigates to the apps page', async function (this: PerfWorld) {
   await this.page.goto(process.env.APPS_URL!);
-  await this.page.waitForLoadState('networkidle');
 });
 
 Then('the Startseite navigation item is visible', async function (this: PerfWorld) {

@@ -1,25 +1,30 @@
-Key observations:
+Kritisches Problem: Speicherleck im JSON-Parsing
+Die Survivor Hotspots sind der entscheidende Beweis:
 
-1. Memory Allocations (3.84 GB allocated total)
+Methode	Überlebter Speicher	Objekte
+Yylex.yylex → JSONParser.parse	6,58 GB	231 Mio.
+MetricsHelper.parse	6,57 GB	231 Mio.
+Conversion.addJsonFi...	6,43 GB	—
+HttpServlet.service	im Stack sichtbar	—
+MetricsHelper.parse ruft org.json.simple.parser.JSONParser auf und erzeugt 231 Millionen Objekte, die den Garbage Collector überleben. Objekte, die den GC überleben, häufen sich in der Old Generation an und sättigen schließlich den Heap.
 
-There is a massive allocation spike (~1.5 GB at once) at startup, then allocations drop significantly and stabilize
-This is typical of a Spring Boot app initializing — loading beans, configurations, caches, reflection metadata
-2. Survived Memory (2.3 MB survived)
+Ausmaß des Problems
+94 GB insgesamt allokiert in ca. 2 Stunden Beobachtungszeitraum
+32,1 GB überlebt — eine Überlebensrate von ~34 %. Bei gesunden Anwendungen sind es weniger als 5–10 %
+Der Java-Anwendungscode allein ist für 31,9 GB überlebten Speicher verantwortlich (JRE, Apache und Spring zusammen nur ~256 MB)
+Ein massiver Spike von 18 GB um ~12:00 Uhr — wahrscheinlich ein geplanter Job oder Cache-Warmup, der massenhaftes JSON-Parsing auslöst
+JVM-Speicherverhalten
+G1 Eden Space zeigt ein normales Sägezahnmuster (füllen → GC → wiederholen), aber der GC kämpft stark darum, Schritt zu halten
+G1 Old Gen GC-Ereignisse (Full GC) treten um 12:00, 12:10 und 12:30 Uhr auf — das sind teure Stop-the-World-Pausen (bis zu ~200 ms)
+Nach ~12:30 Uhr werden keine Old Gen GC-Ereignisse mehr ausgelöst — der Heap ist so voll, dass G1 die normale Objektbeförderung aufgegeben hat, oder die Last hat nachgelassen
+G1 Survivor Space war von 12:30–13:10 Uhr vollständig belegt (~50 MiB), was auf eine sehr hohe Beförderungsrate in die Old Gen in diesem Zeitraum hindeutet
+Pod-Ebene
+Speicher am 10-GiB-Pod-Limit — kein Puffer, OOMKill-Risiko besteht
+CPU ist unauffällig — niedrig und stabil
+Network-out-Spikes bis zu 200 KBps — konsistent mit einem MetricsHelper, der wiederholt Metrikdaten sendet/empfängt
+Ursache
+MetricsHelper.parse macht höchstwahrscheinlich Folgendes:
 
-Very little memory survives GC — meaning most objects are short-lived, which is good
-But the survival spike that appears coincides with a GC event, suggesting a burst of long-lived objects was created at that moment
-3. GC Survivor Space spike (image 1)
-
-One clear GC collection event visible — Survivor Space filled briefly then emptied
-Eden space pattern is flat → GC is keeping up with short-lived allocations most of the time
-4. Metaspace / CodeHeap (images 2 & 3)
-
-All stable and flat — no memory leak in non-heap areas
-Metaspace ~150 MB — normal for a Spring Boot app of this size
-Connecting to yesterday's CPU/I/O spike:
-
-The large initial allocation burst + the 18.7 GB heap (from yesterday) together suggest:
-
-The app allocates heavily at startup, filling Old Generation
-Over time, Old Gen fills up → triggers a Full GC → causes the CPU 100% + I/O spike you saw at 14:00
-Recommendation: Check Old Generation usage specifically — if it's consistently above 70–80%, Full GC is inevitable. Consider tuning -XX:NewRatio or switching to G1GC/ZGC which handle large heaps better.
+Wird häufig aufgerufen (Metriken-Polling-Schleife?)
+Verarbeitet große JSON-Nutzlasten mit org.json.simple, das pro Token ein Objekt allokiert
+Speichert geparste Ergebnisse in einer wachsenden Datenstruktur (Cache ohne Ablaufzeit, statische Liste, unbegrenzte Queue) — sonst würden sie den GC nicht überleben

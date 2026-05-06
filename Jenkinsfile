@@ -35,8 +35,8 @@ pipeline {
             steps {
                 echo 'Checking out Playwright regression tests repository...'
                 dir('playwright-tests') {
-                    git url: "${PLAYWRIGHT_REPO}", branch: 'main',
-                        credentialsId: 'DUMMY_GIT_CREDENTIALS_ID'
+                    git url: "${PLAYWRIGHT_REPO}", branch: 'master',
+                        credentialsId: 'bsp_scm_credentials'
                 }
             }
         }
@@ -44,31 +44,32 @@ pipeline {
         stage('Run Regression Tests') {
             steps {
                 dir('playwright-tests') {
-                    sh 'npm config set strict-ssl false && npm config set registry DUMMY_INTERNAL_NPM_REGISTRY && npm install --cache .npm'
+                    sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm ci --cache .npm'
                     sh 'echo "Using system Chrome at /usr/bin/google-chrome"'
                     withCredentials([
                         usernamePassword(
-                            credentialsId: 'DUMMY_ESM_LOGIN_CREDENTIALS_ID',
+                            credentialsId: 'ESM_LOGIN_CREDENTIALS_ID',
                             usernameVariable: 'LOGIN_USER',
                             passwordVariable: 'LOGIN_PASSWORD'
                         ),
                         usernamePassword(
-                            credentialsId: 'DUMMY_PG_CREDENTIALS_ID',
+                            credentialsId: 'PG_CREDENTIALS_ID',
                             usernameVariable: 'PG_USER',
                             passwordVariable: 'PG_PASSWORD'
                         )
                     ]) {
                         script {
                             def commonEnv = """
-                                LOGIN_URL=DUMMY_LOGIN_URL \
-                                APPS_URL=DUMMY_APPS_URL \
-                                PG_HOST=DUMMY_PG_HOST \
+                                LOGIN_URL=https://login.i8634.sys3.tb.rz.bankenit.de \
+                                APPS_URL=https://esm.i8634.sys3.tb.rz.bankenit.de:16613/ \
+                                PG_HOST=pgsek555.pka.bankenit.de \
                                 PG_PORT=5432 \
                                 PG_DB=db_regtest_timeseries \
                                 PG_SCHEMA=regtest_timeseries \
                                 PERF_VERSION=${ESMSUITE_VERSION} \
                                 PERF_ENV=satu \
-                                CHROME_PATH=/usr/bin/google-chrome
+                                PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright \
+                                BROWSER_CHANNEL=
                             """
                             if (params.TEST_TYPE == 'playwright' || params.TEST_TYPE == 'both') {
                                 echo 'Running Playwright regression tests...'

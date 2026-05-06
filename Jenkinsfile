@@ -46,11 +46,11 @@ pipeline {
             steps {
                 echo 'Checking out regression tests repository...'
                 dir('playwright-tests') {
-                    git url: "${PLAYWRIGHT_REPO}", branch: 'master',
+                    git url: "${PLAYWRIGHT_REPO}", branch: 'main',
                         credentialsId: 'bsp_scm_credentials'
                 }
                 dir('playwright-tests') {
-                    sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm ci --cache .npm'
+                    sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'ESM_LOGIN_CREDENTIALS_ID',

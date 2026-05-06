@@ -1,51 +1,56 @@
 pipeline {
-    agent { label 'cing-base-ext' }
-
-    parameters {
-        choice(
-            name: 'TEST_TYPE',
-            choices: ['playwright', 'cucumber', 'both'],
-            description: 'Select which test suite to run'
-        )
-    }
+    agent { label 'cing-base' }
 
     environment {
-        ESMSUITE_VERSION   = '20260331122345666'
-        PLAYWRIGHT_REPO    = 'https://github.com/vts30/test4.git'
-        LIGHTHOUSE_SCRIPT  = 'src/run_lighthouse.py'
+        ESMSUITE_VERSION   = '20260331122234566'
+        PLAYWRIGHT_REPO    = 'https://git.rz.bankenit.de/scm/bsinf/esm-performance-test.git'
         TIMESERIES_DB_URL  = 'http://timeseries-db.example.com'
+        DEBUG              = true
+    }
+
+    parameters {
+        booleanParam(name: 'DEPLOY',                defaultValue: false,                  description: 'Deployment laufen lassen')
+        string(      name: 'VERSION',               defaultValue: '20260331122234566',    description: 'Welche Version soll deployed werden')
+        string(      name: 'TENANT',                defaultValue: '8634',                 description: 'In welche Umgebung soll deployed werden')
+        booleanParam(name: 'RUN_REGRESSION_TESTS',  defaultValue: false,                  description: 'Regression Tests laufen lassen')
+        choice(      name: 'TEST_TYPE',             choices: ['playwright', 'cucumber', 'both'], description: 'Welche Tests sollen ausgefuehrt werden')
     }
 
     stages {
         stage('Deploy ESMSuite') {
+            agent { label 'cing-python312' }
+            when {
+                triggeredBy cause: 'UserIdCause'
+                expression { params.DEPLOY }
+            }
             steps {
-                echo "Deploying ESMSuite version ${ESMSUITE_VERSION}"
-                sh 'python3 src/deploy_esmsuite.py ${ESMSUITE_VERSION}'
+                withCredentials([usernamePassword(credentialsId: 'AUTOMIC_CREDENTIALS', usernameVariable: 'AUTOMIC_USER', passwordVariable: 'AUTOMIC_PASSWORD')]) {
+                    sh "python3 src/deploy_esmsuite.py --esm-suite-version ${params.VERSION} --tenant ${params.TENANT}"
+                }
             }
         }
 
         stage('Prepare Environments for Regression Testing') {
             steps {
                 echo 'Preparing environments for regression testing...'
-                sh 'python3 src/prepare_databases.py ${ESMSUITE_VERSION}'
-            }
-        }
-
-        stage('Checkout Playwright Regression Tests') {
-            steps {
-                echo 'Checking out Playwright regression tests repository...'
-                dir('playwright-tests') {
-                    git url: "${PLAYWRIGHT_REPO}", branch: 'master',
-                        credentialsId: 'bsp_scm_credentials'
-                }
+                sh "python3 src/prepare_databases.py ${ESMSUITE_VERSION}"
             }
         }
 
         stage('Run Regression Tests') {
+            agent { label 'cing-base-ext' }
+            when {
+                triggeredBy cause: 'UserIdCause'
+                expression { params.RUN_REGRESSION_TESTS }
+            }
             steps {
+                echo 'Checking out regression tests repository...'
+                dir('playwright-tests') {
+                    git url: "${PLAYWRIGHT_REPO}", branch: 'master',
+                        credentialsId: 'bsp_scm_credentials'
+                }
                 dir('playwright-tests') {
                     sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm ci --cache .npm'
-                    sh 'echo "Using system Chrome at /usr/bin/google-chrome"'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'ESM_LOGIN_CREDENTIALS_ID',

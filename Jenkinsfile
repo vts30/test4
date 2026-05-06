@@ -13,7 +13,7 @@ pipeline {
         string(      name: 'VERSION',               defaultValue: '20260331122234566',    description: 'Welche Version soll deployed werden')
         string(      name: 'TENANT',                defaultValue: '8634',                 description: 'In welche Umgebung soll deployed werden')
         booleanParam(name: 'RUN_REGRESSION_TESTS',  defaultValue: false,                  description: 'Regression Tests laufen lassen')
-        choice(      name: 'TEST_TYPE',             choices: ['playwright', 'cucumber', 'both'], description: 'Welche Tests sollen ausgefuehrt werden')
+        choice(      name: 'TEST_TYPE',             choices: ['playwright', 'cucumber', 'both'], description: 'Welche Tests sollen ausgefuehrt werden (nur wenn RUN_REGRESSION_TESTS = true)')
     }
 
     stages {

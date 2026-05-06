@@ -12,8 +12,8 @@ pipeline {
         booleanParam(name: 'DEPLOY',                defaultValue: false,                  description: 'Deployment laufen lassen')
         string(      name: 'VERSION',               defaultValue: '20260331122234566',    description: 'Welche Version soll deployed werden')
         string(      name: 'TENANT',                defaultValue: '8634',                 description: 'In welche Umgebung soll deployed werden')
-        booleanParam(name: 'RUN_REGRESSION_TESTS',  defaultValue: false,                  description: 'Regression Tests laufen lassen')
-        choice(      name: 'TEST_TYPE',             choices: ['playwright', 'cucumber', 'both'], description: 'Welche Tests sollen ausgefuehrt werden (nur wenn RUN_REGRESSION_TESTS = true)')
+        booleanParam(name: 'RUN_REGRESSION_TESTS',  defaultValue: false, description: 'Playwright Regression Tests laufen lassen')
+        booleanParam(name: 'RUN_CUCUMBER_TESTS',    defaultValue: false, description: 'Cucumber Regression Tests laufen lassen')
     }
 
     stages {
@@ -41,7 +41,7 @@ pipeline {
             agent { label 'cing-base-ext' }
             when {
                 triggeredBy cause: 'UserIdCause'
-                expression { params.RUN_REGRESSION_TESTS }
+                expression { params.RUN_REGRESSION_TESTS || params.RUN_CUCUMBER_TESTS }
             }
             steps {
                 echo 'Checking out regression tests repository...'
@@ -76,11 +76,11 @@ pipeline {
                                 PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright \
                                 BROWSER_CHANNEL=
                             """
-                            if (params.TEST_TYPE == 'playwright' || params.TEST_TYPE == 'both') {
+                            if (params.RUN_REGRESSION_TESTS) {
                                 echo 'Running Playwright regression tests...'
                                 sh "${commonEnv} ./node_modules/.bin/playwright test"
                             }
-                            if (params.TEST_TYPE == 'cucumber' || params.TEST_TYPE == 'both') {
+                            if (params.RUN_CUCUMBER_TESTS) {
                                 echo 'Running Cucumber regression tests...'
                                 sh "${commonEnv} TS_NODE_PROJECT=tsconfig.cucumber.json ./node_modules/.bin/cucumber-js"
                             }

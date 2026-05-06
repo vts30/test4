@@ -1,6 +1,14 @@
 pipeline {
     agent { label 'cing-base-ext' }
 
+    parameters {
+        choice(
+            name: 'TEST_TYPE',
+            choices: ['playwright', 'cucumber', 'both'],
+            description: 'Select which test suite to run'
+        )
+    }
+
     environment {
         ESMSUITE_VERSION   = '20260331122345666'
         PLAYWRIGHT_REPO    = 'https://github.com/vts30/test4.git'
@@ -33,9 +41,8 @@ pipeline {
             }
         }
 
-        stage('Run Playwright Regression Tests') {
+        stage('Run Regression Tests') {
             steps {
-                echo 'Running Playwright regression tests...'
                 dir('playwright-tests') {
                     sh 'npm config set strict-ssl false && npm config set registry DUMMY_INTERNAL_NPM_REGISTRY && npm install --cache .npm'
                     sh 'echo "Using system Chrome at /usr/bin/google-chrome"'
@@ -51,20 +58,30 @@ pipeline {
                             passwordVariable: 'PG_PASSWORD'
                         )
                     ]) {
-                        sh """
-                            LOGIN_URL=DUMMY_LOGIN_URL \
-                            APPS_URL=DUMMY_APPS_URL \
-                            PG_HOST=DUMMY_PG_HOST \
-                            PG_PORT=5432 \
-                            PG_DB=db_regtest_timeseries \
-                            PG_SCHEMA=regtest_timeseries \
-                            PERF_VERSION=${ESMSUITE_VERSION} \
-                            PERF_ENV=satu \
-                            CHROME_PATH=/usr/bin/google-chrome \
-                            ./node_modules/.bin/playwright test
-                        """
+                        script {
+                            def commonEnv = """
+                                LOGIN_URL=DUMMY_LOGIN_URL \
+                                APPS_URL=DUMMY_APPS_URL \
+                                PG_HOST=DUMMY_PG_HOST \
+                                PG_PORT=5432 \
+                                PG_DB=db_regtest_timeseries \
+                                PG_SCHEMA=regtest_timeseries \
+                                PERF_VERSION=${ESMSUITE_VERSION} \
+                                PERF_ENV=satu \
+                                CHROME_PATH=/usr/bin/google-chrome
+                            """
+                            if (params.TEST_TYPE == 'playwright' || params.TEST_TYPE == 'both') {
+                                echo 'Running Playwright regression tests...'
+                                sh "${commonEnv} ./node_modules/.bin/playwright test"
+                            }
+                            if (params.TEST_TYPE == 'cucumber' || params.TEST_TYPE == 'both') {
+                                echo 'Running Cucumber regression tests...'
+                                sh "${commonEnv} TS_NODE_PROJECT=tsconfig.cucumber.json ./node_modules/.bin/cucumber-js"
+                            }
+                        }
                     }
                     archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'cucumber-report.html', allowEmptyArchive: true
                 }
             }
         }

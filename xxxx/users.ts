@@ -26,3 +26,7 @@ export const configuredUser: User = {
   modul: process.env.USER_MODUL ?? 'ESM',
   eMail: process.env.USER_EMAIL ?? 'User001.m365@ait-8620-prim.de',
 };
+
+export function getUser(): User {
+  return configuredUser;
+}

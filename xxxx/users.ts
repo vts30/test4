@@ -27,6 +27,8 @@ export const configuredUser: User = {
   eMail: process.env.USER_EMAIL ?? 'User001.m365@ait-8620-prim.de',
 };
 
+export const configuredUserId: string = configuredUser.userID;
+
 export function getUser(_userId?: string): User {
   return configuredUser;
 }

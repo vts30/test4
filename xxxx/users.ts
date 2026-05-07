@@ -6,7 +6,7 @@ export const configuredUser: User = {
   bankENV: process.env.BANK_ENV ?? 'SATU',
   bankNumber: process.env.BANK_NUMBER ?? process.env.ENV?.split('.').pop() ?? '8620',
   userID: process.env.LOGIN_USER_ID ?? 'YC8DCZA',
-  name: process.env.USER_NAME ?? '',
+  name: process.env.USER_NAME ?? 'User001 M365 Egbert Karmann',
   rolles: process.env.USER_ROLES
     ? process.env.USER_ROLES.split(',')
     : [
@@ -21,8 +21,8 @@ export const configuredUser: User = {
         'Aktivitäten-Manager',
         'Genehmigung-Manager',
       ],
-  serviceCenter: process.env.SERVICE_CENTER ?? '',
-  job: process.env.USER_JOB ?? '',
+  serviceCenter: process.env.SERVICE_CENTER ?? 'Service Center IT',
+  job: process.env.USER_JOB ?? 'Leiter IT',
   modul: process.env.USER_MODUL ?? 'ESM',
-  eMail: process.env.USER_EMAIL ?? '',
+  eMail: process.env.USER_EMAIL ?? 'User001.m365@ait-8620-prim.de',
 };

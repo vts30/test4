@@ -40,7 +40,11 @@ let getContext: ReturnType<typeof createContextSetter>['getContext'];
 let scenarioName: string;
 
 BeforeAll(async function () {
-  getEnv();
+  try {
+    getEnv();
+  } catch {
+    // env vars already set from Jenkins — no .env file needed
+  }
   browser = await invokeBrowser();
   getQueue().start();
 });

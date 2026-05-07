@@ -74,6 +74,14 @@ Before(async function ({ pickle }) {
   getContext = contextSetter.getContext;
   fixture.usePerfContext = usePerfContext; // use in step definitions to set scenario name/version
 
+  // auto-set perf context with browser version so version is never "unknown"
+  const browserVersion = context.browser()?.version() ?? 'unknown';
+  usePerfContext({
+    name: pickle.name,
+    env: process.env.PERF_ENV,
+    version: `browser:${browserVersion}`,
+  });
+
   onRequest = (req: Request) => recorder.onRequest(req, Date.now());
   onResponse = (res: Response) => recorder.onResponse(res, Date.now());
   fixture.page.on('request', onRequest);

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import type { User } from '../../types/user';
 
 export const userPassword: string = process.env.USER_PASSWORD ?? 'Start12345';

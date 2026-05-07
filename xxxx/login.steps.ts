@@ -4,7 +4,7 @@
  */
 
 import { Given } from '@cucumber/cucumber';
-import { configuredUser, configuredUserId } from '../src/helper/util/test-data/users';
+import { configuredUser, configuredUserId } from '../../helper/util/test-data/users';
 
 Given('User logs in {string} as configured user', async function (app: string) {
   if (!configuredUser) {

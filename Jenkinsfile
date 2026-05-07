@@ -13,7 +13,7 @@ pipeline {
         string(      name: 'VERSION',               defaultValue: '20260331122234566',    description: 'Welche Version soll deployed werden')
         string(      name: 'TENANT',                defaultValue: '8634',                 description: 'In welche Umgebung soll deployed werden')
         booleanParam(name: 'RUN_REGRESSION_TESTS',  defaultValue: false, description: 'Playwright Regression Tests laufen lassen')
-        booleanParam(name: 'RUN_CUCUMBER_TESTS',    defaultValue: false, description: 'Cucumber Regression Tests laufen lassen')
+        booleanParam(name: 'RUN_CUCUMBER_TESTS',    defaultValue: true,  description: 'Cucumber Regression Tests laufen lassen')
     }
 
     stages {

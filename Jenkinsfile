@@ -13,7 +13,6 @@ pipeline {
         string(      name: 'VERSION',               defaultValue: '20260331122234566',    description: 'Welche Version soll deployed werden')
         string(      name: 'TENANT',                defaultValue: '8634',                 description: 'In welche Umgebung soll deployed werden')
         booleanParam(name: 'RUN_REGRESSION_TESTS',  defaultValue: false, description: 'Playwright Regression Tests laufen lassen')
-        booleanParam(name: 'RUN_CUCUMBER_TESTS',    defaultValue: true,  description: 'Cucumber Regression Tests laufen lassen')
     }
 
     stages {
@@ -41,7 +40,6 @@ pipeline {
             agent { label 'cing-base-ext' }
             when {
                 triggeredBy cause: 'UserIdCause'
-                expression { params.RUN_REGRESSION_TESTS || params.RUN_CUCUMBER_TESTS }
             }
             steps {
                 echo 'Checking out regression tests repository...'
@@ -85,10 +83,8 @@ pipeline {
                                 echo 'Running Playwright regression tests...'
                                 sh "${commonEnv} ./node_modules/.bin/playwright test"
                             }
-                            if (params.RUN_CUCUMBER_TESTS) {
-                                echo 'Running Cucumber regression tests...'
-                                sh "${commonEnv} ./node_modules/.bin/cucumber-js --config=config/cucumber.js"
-                            }
+                            echo 'Running Cucumber regression tests...'
+                            sh "${commonEnv} ./node_modules/.bin/cucumber-js --config=config/cucumber.js"
                         }
                     }
                     archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true

@@ -47,7 +47,7 @@ pipeline {
                     git url: "${PLAYWRIGHT_REPO}", branch: 'main',
                         credentialsId: 'bsp_scm_credentials'
                 }
-                dir('playwright-tests') {
+                dir('playwright-tests/1111') {
                     sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
                     withCredentials([
                         usernamePassword(

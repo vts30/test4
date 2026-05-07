@@ -6,6 +6,8 @@
  *   e.g. '../../packages/perf-lib/recorder'
  */
 
+import dotenv from 'dotenv';
+import { existsSync } from 'fs';
 import { BeforeAll, BeforeStep, Before, After, AfterAll, Status, setDefaultTimeout } from '@cucumber/cucumber';
 import { Browser, BrowserContext, Request, Response } from '@playwright/test';
 import { fixture } from './pageFixture';
@@ -21,6 +23,8 @@ import { resolveConfig } from '../../packages/perf-lib/config';
 import { closePool } from '../../packages/perf-lib/db';
 
 const fs = require('fs-extra');
+
+if (existsSync('.env.satu')) dotenv.config({ path: '.env.satu' });
 
 setDefaultTimeout(60 * 1000);
 

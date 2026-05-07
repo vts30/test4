@@ -65,14 +65,19 @@ pipeline {
                     ]) {
                         script {
                             def commonEnv = """
-                                LOGIN_URL=https://login.i8634.sys3.tb.rz.bankenit.de \
-                                APPS_URL=https://esm.i8634.sys3.tb.rz.bankenit.de:16613/ \
+                                LOGIN_URL=https://login.i${params.TENANT}.sys3.tb.rz.bankenit.de \
+                                APPS_URL=https://esm.i${params.TENANT}.sys3.tb.rz.bankenit.de:16613/ \
+                                BASEURLESM=https://esm.i${params.TENANT}.sys3.tb.rz.bankenit.de:16613/ \
                                 PG_HOST=pgsek555.pka.bankenit.de \
                                 PG_PORT=5432 \
                                 PG_DB=db_regtest_timeseries \
                                 PG_SCHEMA=regtest_timeseries \
                                 PERF_VERSION=${ESMSUITE_VERSION} \
                                 PERF_ENV=satu \
+                                ENV=SATU.${params.TENANT} \
+                                BANK_NUMBER=${params.TENANT} \
+                                LOGIN_USER_ID=${LOGIN_USER} \
+                                USER_PASSWORD=${LOGIN_PASSWORD} \
                                 PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright \
                                 BROWSER_CHANNEL=
                             """
@@ -82,12 +87,12 @@ pipeline {
                             }
                             if (params.RUN_CUCUMBER_TESTS) {
                                 echo 'Running Cucumber regression tests...'
-                                sh "${commonEnv} ENV=SATU.${params.TENANT} TS_NODE_PROJECT=tsconfig.cucumber.json ./node_modules/.bin/cucumber-js --config=config/cucumber.js"
+                                sh "${commonEnv} ./node_modules/.bin/cucumber-js --config=config/cucumber.js"
                             }
                         }
                     }
                     archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
-                    archiveArtifacts artifacts: 'cucumber-report.html', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'test-results/cucumber-report.html', allowEmptyArchive: true
                 }
             }
         }

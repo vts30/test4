@@ -78,7 +78,7 @@ Before(async function ({ pickle }) {
   const browserVersion = context.browser()?.version() ?? 'unknown';
   usePerfContext({
     name: pickle.name,
-    env: process.env.PERF_ENV,
+    env: process.env.PERF_ENV ?? 'local',
     version: `browser:${browserVersion}`,
   });
 

@@ -1,4 +1,4 @@
-import type { User } from '../src/helper/types/user';
+import type { User } from '../../types/user';
 
 export const userPassword: string = process.env.USER_PASSWORD ?? 'Start12345';
 

@@ -4,16 +4,13 @@
  */
 
 import { Given } from '@cucumber/cucumber';
-import { users } from '../src/helper/util/test-data/users';
+import { configuredUser, configuredUserId } from '../src/helper/util/test-data/users';
 
 Given('User logs in {string} as configured user', async function (app: string) {
-  const userId = process.env.LOGIN_USER_ID ?? 'YC8DCZA';
-  const user = users[userId];
-
-  if (!user) {
-    throw new Error(`User '${userId}' not found in users.ts. Check LOGIN_USER_ID env var.`);
+  if (!configuredUser) {
+    throw new Error(`User '${configuredUserId}' not found in users.ts. Check LOGIN_USER_ID in .env.satu.`);
   }
 
   // reuse existing step logic — replace this with their actual login implementation
-  await this.step(`User logs in "${app}" as "${userId}"`);
+  await this.step(`User logs in "${app}" as "${configuredUserId}"`);
 });

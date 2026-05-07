@@ -5,6 +5,9 @@ export const userPassword: string = 'Start12345';
 // bankNumber is derived from BANK_NUMBER env var, or parsed from ENV (e.g. SATU.8620 → 8620)
 const bankNumber = process.env.BANK_NUMBER ?? process.env.ENV?.split('.').pop() ?? '8620';
 
+// configurable user — set LOGIN_USER_ID in .env.satu to change
+export const configuredUserId = process.env.LOGIN_USER_ID ?? 'YC8DCZA';
+
 export const users: Record<string, User> = {
   YC8DCZA: {
     bankENV: 'SATU',
@@ -48,3 +51,5 @@ export const users: Record<string, User> = {
   },
   // add remaining users here following the same pattern
 };
+
+export const configuredUser = users[configuredUserId];

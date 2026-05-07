@@ -13,9 +13,6 @@ import { invokeBrowser } from '../helper/browsers/browserManager';
 import { getEnv } from '../helper/env/env';
 import { createLogger } from 'winston';
 import { options } from '../helper/util/logger';
-import dotenv from 'dotenv';
-import { existsSync } from 'fs';
-
 // perf-lib imports — adjust path if packages/ is placed elsewhere
 import { createRecorder, type PerfRecord } from '../../packages/perf-lib/recorder';
 import { getQueue } from '../../packages/perf-lib/queue';
@@ -24,8 +21,6 @@ import { resolveConfig } from '../../packages/perf-lib/config';
 import { closePool } from '../../packages/perf-lib/db';
 
 const fs = require('fs-extra');
-
-if (existsSync('.env.satu')) dotenv.config({ path: '.env.satu' });
 
 setDefaultTimeout(60 * 1000);
 

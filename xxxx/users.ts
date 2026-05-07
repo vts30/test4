@@ -7,7 +7,20 @@ export const configuredUser: User = {
   bankNumber: process.env.BANK_NUMBER ?? process.env.ENV?.split('.').pop() ?? '8620',
   userID: process.env.LOGIN_USER_ID ?? 'YC8DCZA',
   name: process.env.USER_NAME ?? '',
-  rolles: [],
+  rolles: process.env.USER_ROLES
+    ? process.env.USER_ROLES.split(',')
+    : [
+        'Service-Catalogue und Service-Level-Management',
+        'Workflowservice – Business-Analyst',
+        'Service-Configuration-Management',
+        'Service-Desk-Agent',
+        'Security-Incident-Prozessmitarbeiter',
+        'Knowledge-Manager',
+        'Arbeitsanweisungen-Manager',
+        'ESM – Service-Operator',
+        'Aktivitäten-Manager',
+        'Genehmigung-Manager',
+      ],
   serviceCenter: process.env.SERVICE_CENTER ?? '',
   job: process.env.USER_JOB ?? '',
   modul: process.env.USER_MODUL ?? 'ESM',

@@ -82,7 +82,7 @@ pipeline {
                             }
                             if (params.RUN_CUCUMBER_TESTS) {
                                 echo 'Running Cucumber regression tests...'
-                                sh "${commonEnv} TS_NODE_PROJECT=tsconfig.cucumber.json ./node_modules/.bin/cucumber-js"
+                                sh "${commonEnv} ENV=SATU.${params.TENANT} TS_NODE_PROJECT=tsconfig.cucumber.json ./node_modules/.bin/cucumber-js --config=config/cucumber.js"
                             }
                         }
                     }

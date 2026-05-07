@@ -20,7 +20,7 @@ export const configuredUser: User = {
         'ESM – Service-Operator',
         'Aktivitäten-Manager',
         'Genehmigung-Manager',
-      ]) as User['rolles'],
+      ]) as unknown as User['rolles'],
   serviceCenter: process.env.SERVICE_CENTER ?? 'Service Center IT',
   job: process.env.USER_JOB ?? 'Leiter IT',
   modul: process.env.USER_MODUL ?? 'ESM',

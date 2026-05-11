@@ -49,6 +49,7 @@ pipeline {
                 }
                 dir('playwright-tests/1111') {
                     sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
+                    sh 'PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright ./node_modules/.bin/playwright install chromium'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'ESM_LOGIN_CREDENTIALS_ID',

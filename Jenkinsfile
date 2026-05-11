@@ -77,7 +77,7 @@ pipeline {
                                 LOGIN_USER_ID=${LOGIN_USER} \
                                 USER_PASSWORD=${LOGIN_PASSWORD} \
                                 PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright \
-                                BROWSER_CHANNEL=
+                                HEADLESS=true
                             """
                             if (params.RUN_REGRESSION_TESTS) {
                                 echo 'Running Playwright regression tests...'

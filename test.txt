@@ -1,30 +1,61 @@
-Kritisches Problem: Speicherleck im JSON-Parsing
-Die Survivor Hotspots sind der entscheidende Beweis:
+Subject: forumsuite — Root Cause of Application Slowness
+Hi team,
 
-Methode	Überlebter Speicher	Objekte
-Yylex.yylex → JSONParser.parse	6,58 GB	231 Mio.
-MetricsHelper.parse	6,57 GB	231 Mio.
-Conversion.addJsonFi...	6,43 GB	—
-HttpServlet.service	im Stack sichtbar	—
-MetricsHelper.parse ruft org.json.simple.parser.JSONParser auf und erzeugt 231 Millionen Objekte, die den Garbage Collector überleben. Objekte, die den GC überleben, häufen sich in der Old Generation an und sättigen schließlich den Heap.
+We have been monitoring the forumsuite application in both the Münster and Karlsruhe production environments over the past week. We have identified the root cause of the performance degradation and slowness. Here is a summary of findings and what needs to be fixed.
 
-Ausmaß des Problems
-94 GB insgesamt allokiert in ca. 2 Stunden Beobachtungszeitraum
-32,1 GB überlebt — eine Überlebensrate von ~34 %. Bei gesunden Anwendungen sind es weniger als 5–10 %
-Der Java-Anwendungscode allein ist für 31,9 GB überlebten Speicher verantwortlich (JRE, Apache und Spring zusammen nur ~256 MB)
-Ein massiver Spike von 18 GB um ~12:00 Uhr — wahrscheinlich ein geplanter Job oder Cache-Warmup, der massenhaftes JSON-Parsing auslöst
-JVM-Speicherverhalten
-G1 Eden Space zeigt ein normales Sägezahnmuster (füllen → GC → wiederholen), aber der GC kämpft stark darum, Schritt zu halten
-G1 Old Gen GC-Ereignisse (Full GC) treten um 12:00, 12:10 und 12:30 Uhr auf — das sind teure Stop-the-World-Pausen (bis zu ~200 ms)
-Nach ~12:30 Uhr werden keine Old Gen GC-Ereignisse mehr ausgelöst — der Heap ist so voll, dass G1 die normale Objektbeförderung aufgegeben hat, oder die Last hat nachgelassen
-G1 Survivor Space war von 12:30–13:10 Uhr vollständig belegt (~50 MiB), was auf eine sehr hohe Beförderungsrate in die Old Gen in diesem Zeitraum hindeutet
-Pod-Ebene
-Speicher am 10-GiB-Pod-Limit — kein Puffer, OOMKill-Risiko besteht
-CPU ist unauffällig — niedrig und stabil
-Network-out-Spikes bis zu 200 KBps — konsistent mit einem MetricsHelper, der wiederholt Metrikdaten sendet/empfängt
-Ursache
-MetricsHelper.parse macht höchstwahrscheinlich Folgendes:
+What Is Happening
+The application has a memory leak. Over time, the JVM accumulates objects in memory that are never released, even after garbage collection. This has been confirmed through profiling.
 
-Wird häufig aufgerufen (Metriken-Polling-Schleife?)
-Verarbeitet große JSON-Nutzlasten mit org.json.simple, das pro Token ein Objekt allokiert
-Speichert geparste Ergebnisse in einer wachsenden Datenstruktur (Cache ohne Ablaufzeit, statische Liste, unbegrenzte Queue) — sonst würden sie den GC nicht überleben
+The primary source is:
+
+MetricsHelper.parse → calls org.json.simple.parser.JSONParser → accumulates 231 million objects that survive garbage collection
+
+In 2 hours of operation:
+
+Münster instance: 94 GB allocated, 32 GB survived (34% survival rate)
+Karlsruhe instance: 135 GB allocated, 48.7 GB survived (36% survival rate)
+A healthy application has a survival rate below 5–10%. At 36%, objects are being held in memory and not released.
+
+Why This Makes the Application Slow
+When memory fills up, the JVM triggers Garbage Collection (GC) to try to free memory. During GC the application completely pauses — no requests are processed. We are seeing pauses of up to 240 ms regularly.
+
+This cycle keeps repeating:
+
+
+Memory fills up
+    → GC triggered
+    → Application pauses 240ms
+    → Memory still high (leak not cleared)
+    → GC triggered again shortly after
+    → Users experience slow or hanging requests
+As memory pressure increases, GC runs more frequently, making the application progressively slower over time until a pod restart occurs.
+
+Additional Finding
+The Karlsruhe environment also shows Hibernate contributing to allocations — this was not visible in Münster. It is worth checking whether Hibernate query result caches are also growing without bounds.
+
+Evidence
+Observation	Value
+Survived memory (Karlsruhe, 2h)	48.7 GB
+Largest single survived spike	6.5 GB in one event
+GC pause duration	up to 240 ms
+Spikes pattern	every ~10 minutes — points to a scheduled job
+Network out	up to 500 KBps — high outbound traffic
+Pod memory limit	increased 10 GiB → 20 GiB (short-term fix applied, not a solution)
+What the Development Team Needs to Do
+Investigate MetricsHelper.parse — identify where parsed JSON results are being stored. Look for static fields, unbounded caches (Map, List) or collections that grow without eviction
+
+Replace org.json.simple with Jackson Streaming API — org.json.simple creates one object per JSON token, generating millions of short-lived objects. Jackson streaming avoids this
+
+Check Hibernate caches — verify that query result caches have size limits and TTL configured
+
+Identify the scheduled job triggering every ~10 minutes — this appears to be the main driver of memory spikes. Review cron jobs or @Scheduled methods that call MetricsHelper.parse
+
+Take a heap dump during a spike — this will confirm exactly which objects are accumulating and where they are referenced from
+
+Current Status
+The pod memory limit was increased as a temporary measure to prevent crashes. This is not a fix — allocations are increasing faster than before (135 GB vs 94 GB in the same window). Without fixing the leak in code, the application will continue to degrade and eventually crash with an OOMKill.
+
+Please let us know if you need the profiling data or heap dump to assist investigation.
+
+Best regards,
+DevOps Team

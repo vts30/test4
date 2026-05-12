@@ -49,6 +49,7 @@ pipeline {
                 }
                 dir('playwright-tests/1111') {
                     sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
+                    sh 'echo "=== src/hooks/hooks.ts ===" && cat src/hooks/hooks.ts'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'ESM_LOGIN_CREDENTIALS_ID',

@@ -6,6 +6,7 @@ pipeline {
         PLAYWRIGHT_REPO    = 'https://git.rz.bankenit.de/scm/bsinf/esm-performance-test.git'
         TIMESERIES_DB_URL  = 'http://timeseries-db.example.com'
         DEBUG              = true
+        CHROME_PATH        = '/usr/bin/google-chrome'
     }
 
     parameters {
@@ -77,7 +78,6 @@ pipeline {
                                 BANK_NUMBER=${params.TENANT} \
                                 LOGIN_USER_ID=${LOGIN_USER} \
                                 USER_PASSWORD=${LOGIN_PASSWORD} \
-                                CHROME_PATH=/usr/bin/google-chrome \
                                 HEADLESS=true
                             """
                             if (params.RUN_REGRESSION_TESTS) {

@@ -49,8 +49,6 @@ pipeline {
                 }
                 dir('playwright-tests/1111') {
                     sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
-                    sh 'echo "=== Playwright cache ===" && ls /home/jenkins/.cache/ms-playwright/ || echo "cache dir not found"'
-                    sh 'echo "=== Chrome/Chromium on PATH ===" && which google-chrome chromium chromium-browser 2>/dev/null || echo "none found on PATH"'
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'ESM_LOGIN_CREDENTIALS_ID',
@@ -78,7 +76,7 @@ pipeline {
                                 BANK_NUMBER=${params.TENANT} \
                                 LOGIN_USER_ID=${LOGIN_USER} \
                                 USER_PASSWORD=${LOGIN_PASSWORD} \
-                                PLAYWRIGHT_BROWSERS_PATH=/home/jenkins/.cache/ms-playwright \
+                                CHROME_PATH=/usr/bin/google-chrome \
                                 HEADLESS=true
                             """
                             if (params.RUN_REGRESSION_TESTS) {

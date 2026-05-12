@@ -52,8 +52,9 @@ BeforeStep(async function () {
 
 Before(async function ({ pickle }) {
   scenarioName = pickle.name;
+  const headless = process.env.HEADLESS !== 'false';
   context = await browser.newContext({
-    recordVideo: { dir: 'test-results/videos' },
+    recordVideo: headless ? undefined : { dir: 'test-results/videos' },
   });
   await context.tracing.start({
     name: pickle.name + pickle.id,
@@ -105,8 +106,8 @@ After(async function ({ pickle, result }) {
   await queue.flush();
 
   // their existing: screenshot, video, trace
-  let videoPath: string;
-  let img: Buffer;
+  let videoPath: string | undefined;
+  let img: Buffer | undefined;
   const path = `./test-results/trace/${pickle.id}.zip`;
   if (result?.status === Status.PASSED) {
     img = await fixture.page.screenshot({
@@ -114,16 +115,16 @@ After(async function ({ pickle, result }) {
       type: 'png',
     });
     // @ts-ignore
-    videoPath = await fixture.page.video().path();
+    videoPath = fixture.page.video() ? await fixture.page.video().path() : undefined;
   }
   await context.tracing.stop({ path });
   await fixture.page.close();
   await context.close();
   if (result?.status === Status.PASSED) {
     // @ts-ignore
-    this.attach(img, 'image/png');
+    if (img) this.attach(img, 'image/png');
     // @ts-ignore
-    this.attach(fs.readFileSync(videoPath), 'video/webm');
+    if (videoPath) this.attach(fs.readFileSync(videoPath), 'video/webm');
     const traceFileLink = `<a href="https://trace.playwright.dev/">Open ${path}</a>`;
     this.attach(`Trace file: ${traceFileLink}`, 'text/html');
   }

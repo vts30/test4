@@ -63,30 +63,23 @@ pipeline {
                             passwordVariable: 'PG_PASSWORD'
                         )
                     ]) {
-                        script {
-                            def commonEnv = """
-                                LOGIN_URL=https://login.i${params.TENANT}.sys3.tb.rz.bankenit.de \
-                                APPS_URL=https://esm.i${params.TENANT}.sys3.tb.rz.bankenit.de:16613/ \
-                                BASEURLESM=https://esm.i${params.TENANT}.sys3.tb.rz.bankenit.de:16613/ \
-                                PG_HOST=pgsek555.pka.bankenit.de \
-                                PG_PORT=5432 \
-                                PG_DB=db_regtest_timeseries \
-                                PG_SCHEMA=regtest_timeseries \
-                                PERF_VERSION=${ESMSUITE_VERSION} \
-                                PERF_ENV=satu \
-                                ENV=SATU.${params.TENANT} \
-                                BANK_NUMBER=${params.TENANT} \
-                                LOGIN_USER_ID=${LOGIN_USER} \
-                                USER_PASSWORD=${LOGIN_PASSWORD} \
-                                HEADLESS=true
-                            """
-                            if (params.RUN_REGRESSION_TESTS) {
-                                echo 'Running Playwright regression tests...'
-                                sh "${commonEnv} ./node_modules/.bin/playwright test"
-                            }
-                            echo 'Running Cucumber regression tests...'
-                            sh "${commonEnv} ./node_modules/.bin/cucumber-js --config=config/cucumber.js"
-                        }
+                        sh """
+                            export LOGIN_URL=https://login.i${params.TENANT}.sys3.tb.rz.bankenit.de
+                            export APPS_URL=https://esm.i${params.TENANT}.sys3.tb.rz.bankenit.de:16613/
+                            export BASEURLESM=https://esm.i${params.TENANT}.sys3.tb.rz.bankenit.de:16613/
+                            export PG_HOST=pgsek555.pka.bankenit.de
+                            export PG_PORT=5432
+                            export PG_DB=db_regtest_timeseries
+                            export PG_SCHEMA=regtest_timeseries
+                            export PERF_VERSION=${ESMSUITE_VERSION}
+                            export PERF_ENV=satu
+                            export ENV=SATU.${params.TENANT}
+                            export BANK_NUMBER=${params.TENANT}
+                            export LOGIN_USER_ID=${LOGIN_USER}
+                            export USER_PASSWORD=${LOGIN_PASSWORD}
+                            export HEADLESS=true
+                            ./node_modules/.bin/cucumber-js --config=config/cucumber.js
+                        """
                     }
                     archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
                     archiveArtifacts artifacts: 'test-results/cucumber-report.html', allowEmptyArchive: true

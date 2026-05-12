@@ -11,7 +11,6 @@ import { existsSync } from 'fs';
 import { BeforeAll, BeforeStep, Before, After, AfterAll, Status, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium, Browser, BrowserContext, Request, Response } from '@playwright/test';
 import { fixture } from './pageFixture';
-import { getEnv } from '../helper/env/env';
 import { createLogger } from 'winston';
 import { options } from '../helper/util/logger';
 // perf-lib imports — adjust path if packages/ is placed elsewhere
@@ -39,11 +38,6 @@ let getContext: ReturnType<typeof createContextSetter>['getContext'];
 let scenarioName: string;
 
 BeforeAll(async function () {
-  try {
-    getEnv();
-  } catch {
-    // env vars already set from Jenkins — no .env file needed
-  }
   browser = await chromium.launch({
     headless: process.env.HEADLESS !== 'false',
     executablePath: process.env.CHROME_PATH || undefined,

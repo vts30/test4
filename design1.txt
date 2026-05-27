@@ -1,0 +1,194 @@
+Performance Recording — Cucumber Test Team Integration
+=======================================================
+Demo guide: what changes, what you get, how to run
+=======================================================
+
+
+1. THE IDEA IN ONE SENTENCE
+----------------------------
+
+  Your existing Cucumber tests stay unchanged.
+  We add ONE file (hooks.ts) that silently records every HTTP call
+  your browser makes and stores response times in a database.
+
+
+2. WHAT CHANGES IN YOUR PROJECT
+---------------------------------
+
+  BEFORE (your project today)          AFTER (with perf recording)
+  ─────────────────────────────        ──────────────────────────────
+  src/hooks/hooks.ts       (yours)  →  replaced with hooks_merge.ts
+  src/helper/util/users.ts (yours)  →  replaced with configurable version
+  .env.satu                         →  add PERF_ENV, PG_HOST, PG_USER ...
+
+  Everything else — feature files, step definitions, page objects —
+  stays exactly as it is. No changes needed.
+
+
+3. YOUR PROJECT STRUCTURE (unchanged)
+--------------------------------------
+
+  src/
+  ├── hooks/
+  │   └── hooks.ts          ← only this file is replaced
+  ├── test/
+  │   ├── features/         ← YOUR feature files (no change)
+  │   │   └── Anmelden.feature
+  │   ├── steps/            ← YOUR step definitions (no change)
+  │   │   └── login.steps.ts
+  │   └── pages/            ← YOUR page objects (no change)
+  │       ├── loginPage.ts
+  │       └── startseitePage.ts
+  └── helper/
+      └── util/
+          └── users.ts      ← only this file is replaced
+
+
+4. WHAT THE NEW hooks.ts DOES
+------------------------------
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  BeforeAll                                                   │
+  │    Launch Chrome  (uses CHROME_PATH from env)               │
+  └──────────────────────────┬──────────────────────────────────┘
+                             │ (once per test run)
+  ┌──────────────────────────▼──────────────────────────────────┐
+  │  Before  (runs before EACH scenario)                         │
+  │    Open browser context + new page                          │
+  │    Start Playwright tracing                                  │
+  │    Attach request/response listeners  ← PERF RECORDING ON   │
+  │    Set run version (build-42 or local-timestamp)            │
+  └──────────────────────────┬──────────────────────────────────┘
+                             │
+  ┌──────────────────────────▼──────────────────────────────────┐
+  │  YOUR TEST RUNS  (no change needed)                          │
+  │    Given User logs in "ESM" as "configured-user"            │
+  │    → every HTTP call is silently captured in background      │
+  └──────────────────────────┬──────────────────────────────────┘
+                             │
+  ┌──────────────────────────▼──────────────────────────────────┐
+  │  After  (runs after EACH scenario)                           │
+  │    Stop request/response listeners  ← PERF RECORDING OFF    │
+  │    Tag all records with test name + env + run version        │
+  │    Flush to PostgreSQL (or CSV locally)                      │
+  │    Take screenshot + save trace                              │
+  └──────────────────────────┬──────────────────────────────────┘
+                             │ (once per test run)
+  ┌──────────────────────────▼──────────────────────────────────┐
+  │  AfterAll                                                    │
+  │    Final DB flush + close connection + close browser         │
+  └─────────────────────────────────────────────────────────────┘
+
+
+5. WHAT GETS RECORDED
+----------------------
+
+  For every HTTP request the browser makes during your test:
+
+  ┌──────────────────────┬────────────────────────────────────┐
+  │ Field                │ Example value                      │
+  ├──────────────────────┼────────────────────────────────────┤
+  │ test_name            │ Login in ESM with user: ...        │
+  │ environment          │ satu                               │
+  │ version              │ build-42                           │
+  │ url                  │ https://esm.i8634.../api/users     │
+  │ method               │ GET                                │
+  │ status_code          │ 200                                │
+  │ response_time_ms     │ 342                                │
+  │ recorded_at          │ 2026-05-27 09:15:03                │
+  └──────────────────────┴────────────────────────────────────┘
+
+
+6. RUN VERSION — ONE VALUE PER BUILD
+--------------------------------------
+
+  Jenkins build  →  version = "build-42"   (from BUILD_NUMBER)
+  Local run      →  version = "local-1748345612345"
+
+  All scenarios in the same run share the same version.
+  This lets you compare builds:
+
+    SELECT version, ROUND(AVG(response_time_ms)) AS avg_ms
+    FROM regtest_timeseries.perf_results
+    GROUP BY version ORDER BY version DESC;
+
+    version    │ avg_ms
+    ───────────┼────────
+    build-44   │   287
+    build-43   │   412     ← build-43 was slower → investigate
+    build-42   │   291
+
+
+7. HOW TO RUN LOCALLY
+----------------------
+
+  1. Copy .env.satu.template → .env.satu  (in project root)
+  2. Fill in PG_USER and PG_PASSWORD
+  3. Run:
+
+     npm run test:cucumber:satu
+
+  Local run uses HEADLESS=false  → you see the browser
+  Local run writes to CSV as well  → perf-results.csv
+
+
+8. HOW JENKINS RUNS IT
+-----------------------
+
+  Jenkins sets all env vars automatically:
+
+    BASEURLESM    = https://esm.i<TENANT>.sys3.tb.rz.bankenit.de:16613/
+    LOGIN_USER_ID = from ESM_LOGIN_CREDENTIALS
+    USER_PASSWORD = from ESM_LOGIN_CREDENTIALS
+    PERF_ENV      = satu
+    BUILD_NUMBER  = 42                 ← becomes run version "build-42"
+    CHROME_PATH   = /usr/bin/google-chrome
+    HEADLESS      = true
+    PG_HOST / PG_USER / PG_PASSWORD   = from PG_CREDENTIALS
+
+  Then runs:
+    cucumber-js --config=config/cucumber.js
+
+
+9. WHAT YOU (TEST TEAM) NEED TO DO
+------------------------------------
+
+  Step 1 — Copy two files into your project:
+
+    hooks_merge.ts   →   src/hooks/hooks.ts
+    xxxx/users.ts    →   src/helper/util/users.ts
+
+  Step 2 — Add perf-lib to your project:
+
+    Copy  packages/perf-lib/  →  your project's packages/perf-lib/
+    Check import paths in hooks.ts match the location
+
+  Step 3 — Add env vars to .env.satu (for local runs):
+
+    PERF_ENV=satu
+    PG_HOST=pgsek555.pka.bankenit.de
+    PG_PORT=5432
+    PG_DB=db_regtest_timeseries
+    PG_SCHEMA=regtest_timeseries
+    PG_USER=<your db user>
+    PG_PASSWORD=<your db password>
+
+  Step 4 — Run locally and verify CSV output appears
+
+  Step 5 — Commit and push → Jenkins does the rest
+
+
+10. NOTHING CHANGES FOR YOUR TEST CODE
+----------------------------------------
+
+  Your feature files:      NO CHANGE
+  Your step definitions:   NO CHANGE
+  Your page objects:       NO CHANGE
+  Your cucumber.js config: NO CHANGE
+
+  Performance recording is completely invisible to your tests.
+
+
+=======================================================
+END
+=======================================================

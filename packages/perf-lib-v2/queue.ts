@@ -9,14 +9,14 @@ export interface ObservationRecord extends PerfRecord {
 
 export interface Queue {
   enqueue(records: ObservationRecord[]): void;
-  flush(runId: string): Promise<boolean>;
+  flush(runNumber: number): Promise<boolean>;
   size(): number;
   start(): void;
   stop(): void;
 }
 
 // flat CSV — test_run fields + observation fields in every row (local dev only)
-const CSV_HEADER = 'run_id,build_id,git_hash,branch,environment,version,test_suite,metric_name,value,recorded_at,url,method,status_code,response_size_bytes,content_type,assertions';
+const CSV_HEADER = 'run_number,build_id,git_hash,branch,environment,version,test_suite,metric_name,value,recorded_at,url,method,status_code,response_size_bytes,content_type,assertions';
 
 function escapeCsv(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
@@ -27,12 +27,12 @@ function escapeCsv(value: string | number | null | undefined): string {
   return s;
 }
 
-function flushToCsv(batch: ObservationRecord[], runId: string, csvPath: string): void {
+function flushToCsv(batch: ObservationRecord[], runNumber: number, csvPath: string): void {
   const cfg = resolveConfig();
   const needsHeader = !existsSync(csvPath);
   const now = new Date().toISOString();
   const rows = batch.map((r) => [
-    runId, cfg.buildId, cfg.gitHash, cfg.branch,
+    runNumber, cfg.buildId, cfg.gitHash, cfg.branch,
     cfg.environment, cfg.version, cfg.testSuite,
     r.metricName, r.responseTimeMs, now,
     r.url, r.method, r.statusCode,
@@ -50,9 +50,9 @@ export function getQueue(): Queue {
 
   const buffer: ObservationRecord[] = [];
   let intervalId: ReturnType<typeof setInterval> | null = null;
-  let pendingRunId: string | null = null;
+  let pendingRunNumber: number | null = null;
 
-  const flush = async (runId: string): Promise<boolean> => {
+  const flush = async (runNumber: number): Promise<boolean> => {
     if (buffer.length === 0) return true;
     const batch = buffer.splice(0, buffer.length);
     const now = new Date();
@@ -60,7 +60,7 @@ export function getQueue(): Queue {
     const csvPath = process.env.PERF_CSV_PATH;
     if (csvPath) {
       try {
-        flushToCsv(batch, runId, csvPath);
+        flushToCsv(batch, runNumber, csvPath);
         return true;
       } catch (err) {
         console.warn(`[perf-v2] CSV write failed: ${(err as Error).message}`);
@@ -74,7 +74,7 @@ export function getQueue(): Queue {
     });
 
     const params = batch.flatMap((r) => [
-      runId,
+      runNumber,
       r.metricName,
       r.responseTimeMs,
       now,
@@ -89,7 +89,7 @@ export function getQueue(): Queue {
     ]);
 
     const sql = `
-      INSERT INTO observations (run_id, metric_name, value, recorded_at, attributes)
+      INSERT INTO observations (run_number, metric_name, value, recorded_at, attributes)
       VALUES ${values.join(', ')}
     `;
 
@@ -113,7 +113,7 @@ export function getQueue(): Queue {
     start(): void {
       if (!intervalId) {
         intervalId = setInterval(() => {
-          if (pendingRunId) flush(pendingRunId).catch(() => {});
+          if (pendingRunNumber) flush(pendingRunNumber).catch(() => {});
         }, 5000);
       }
     },
@@ -128,6 +128,3 @@ export function getQueue(): Queue {
   return instance;
 }
 
-export function setQueueRunId(runId: string): void {
-  (getQueue() as any)._runId = runId;
-}

@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync } from 'fs';
 import { getPool } from './db';
+import { resolveConfig } from './config';
 import type { PerfRecord } from './recorder';
 
 export interface ObservationRecord extends PerfRecord {
@@ -14,9 +15,10 @@ export interface Queue {
   stop(): void;
 }
 
-const CSV_HEADER = 'run_id,metric_name,value,recorded_at,url,method,status_code,response_size_bytes,content_type,assertions';
+// flat CSV — test_run fields + observation fields in every row (local dev only)
+const CSV_HEADER = 'run_id,build_id,git_hash,branch,environment,version,test_suite,metric_name,value,recorded_at,url,method,status_code,response_size_bytes,content_type,assertions';
 
-function escapeCsv(value: string | number | null): string {
+function escapeCsv(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
   const s = String(value);
   if (s.includes(',') || s.includes('"') || s.includes('\n')) {
@@ -26,10 +28,13 @@ function escapeCsv(value: string | number | null): string {
 }
 
 function flushToCsv(batch: ObservationRecord[], runId: string, csvPath: string): void {
+  const cfg = resolveConfig();
   const needsHeader = !existsSync(csvPath);
   const now = new Date().toISOString();
   const rows = batch.map((r) => [
-    runId, r.metricName, r.responseTimeMs, now,
+    runId, cfg.buildId, cfg.gitHash, cfg.branch,
+    cfg.environment, cfg.version, cfg.testSuite,
+    r.metricName, r.responseTimeMs, now,
     r.url, r.method, r.statusCode,
     r.responseSizeBytes, r.contentType,
     JSON.stringify({ ...r.assertions }),

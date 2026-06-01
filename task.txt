@@ -1,0 +1,63 @@
+Zusammenfassung:
+Neugestaltung des Performance-Datenbank-Schemas: Zwei-Tabellen-Struktur (test_runs + observations)
+
+Typ: Aufgabe
+
+Beschreibung:
+
+Hintergrund:
+Die aktuelle Tabelle perf_results speichert alle Performance-Daten in einer einzigen flachen Tabelle.
+Umgebung, Version und Test-Metadaten werden in jeder Zeile wiederholt. Dies erschwert die
+laufübergreifende Analyse und beeinträchtigt die Abfrageleistung, insbesondere für KI-basierte
+Analysetools.
+
+Ziel:
+Die flache Tabelle perf_results wird durch eine normalisierte Zwei-Tabellen-Struktur ersetzt,
+die Test-Metadaten von den einzelnen HTTP-Beobachtungen trennt.
+
+Neues Schema:
+
+test_runs — eine Zeile pro Jenkins-Build:
+  - run_number  (BIGSERIAL, PK)   — lesbare Zahl, schnelle Integer-Abfragen
+  - id          (UUID, UNIQUE)    — stabiler externer Bezeichner
+  - build_id    — Jenkins BUILD_NUMBER
+  - git_hash    — Git-Commit-Hash
+  - branch      — Git-Branch
+  - environment — z. B. satu, local
+  - version     — Software-Version (ESMSuite-Version)
+  - test_suite  — Name der Testsuite
+  - started_at  — Startzeit des Testlaufs
+  - finished_at — Endzeit des Testlaufs
+  - status      — 'running' | 'complete' | 'partial'
+  - tags        (JSONB) — beliebige Zusatzinformationen
+
+observations — eine Zeile pro HTTP-Anfrage:
+  - run_number   (BIGINT, FK → test_runs) — Integer-Join für bessere Performance
+  - metric_name  — Name des Testszenarios
+  - value        — Antwortzeit in Millisekunden (response_time_ms)
+  - recorded_at  — Zeitstempel der Messung
+  - attributes   (JSONB) — url, method, status_code, response_size, content_type, assertions
+
+Laufstatus / Kompensierende Logik:
+  - Ein Testlauf startet mit Status 'running'
+  - In AfterAll wird der Status auf 'complete' oder 'partial' aktualisiert
+  - 'partial' bedeutet: einzelne Schreibvorgänge sind fehlgeschlagen — Daten bleiben erhalten,
+    nichts wird gelöscht
+
+Lokale Entwicklung:
+  - CSV-Ausgabe fasst beide Tabellen in einer flachen Datei zusammen (einfach lesbar in Excel)
+  - Jenkins-Parameter (BUILD_NUMBER, GIT_COMMIT, GIT_BRANCH) können in .env.satu hartcodiert
+    werden, um einen Jenkins-Lauf lokal zu simulieren
+
+Implementierung:
+  - Neues Paket packages/perf-lib-v2/ — alter Code in packages/perf-lib/ bleibt unverändert
+  - Aktualisierte Vorlage hooks_merge_v2.ts für das Testteam
+  - Keine Breaking Changes am bestehenden System
+
+Abnahmekriterien:
+  - DDL erstellt beide Tabellen mit Indizes
+  - Testlauf legt beim Start eine Zeile in test_runs an
+  - Beobachtungen werden mit korrektem run_number-Fremdschlüssel gespeichert
+  - Status wird in AfterAll auf 'complete' oder 'partial' aktualisiert
+  - CSV enthält alle Felder beider Tabellen in einer flachen Datei
+  - Altes perf-lib funktioniert weiterhin ohne Änderungen

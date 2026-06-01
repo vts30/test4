@@ -1,0 +1,156 @@
+ESM Suite Performance Fixture — Cucumber Integration Architecture
+=================================================================
+
+
+1. PROJECT STRUCTURE
+--------------------
+
+  reg-test-performance-fixture/        (this repo — fixture + templates)
+  │
+  ├── packages/
+  │   ├── perf-lib/                    core recording library
+  │   │   ├── recorder.ts              captures HTTP request/response timing
+  │   │   ├── queue.ts                 buffers records, writes to DB or CSV
+  │   │   ├── db.ts                    PostgreSQL connection pool
+  │   │   ├── config.ts                resolves env vars (PERF_ENV, PERF_VERSION)
+  │   │   └── context.ts               per-scenario name/env/version context
+  │   └── perf-playwright/             Playwright-specific fixture (separate usage)
+  │
+  ├── hooks_merge.ts                   TEMPLATE → copy to test team's hooks.ts
+  ├── xxxx/                            TEMPLATES for test team
+  │   ├── users.ts                     configurable user (all fields from env vars)
+  │   ├── Anmelden.feature             example feature file
+  │   ├── login.steps.ts               example step definition
+  │   └── .env.satu.template           local env var template
+  └── Jenkinsfile                      pipeline: deploy → test → report
+
+
+  esm-performance-test/                (test team's repo — checked out by Jenkins)
+  │
+  └── 1111/                            project subfolder
+      ├── src/
+      │   ├── hooks/
+      │   │   └── hooks.ts             ← merged from hooks_merge.ts (our code)
+      │   ├── test/
+      │   │   ├── features/            Cucumber .feature files (test team)
+      │   │   ├── steps/               step definitions (test team)
+      │   │   └── pages/               Page Object Model (test team)
+      │   └── helper/
+      │       ├── env/env.ts           getEnv() — NOT called (uses process.exit)
+      │       ├── util/users.ts        ← replaced: all fields from env vars
+      │       └── util/logger.ts       Winston logger
+      ├── packages/perf-lib/           symlink or copy of our perf-lib
+      └── config/cucumber.js           Cucumber config
+
+
+2. TEST RUN FLOW
+----------------
+
+  Jenkins sets env vars
+  (BASEURLESM, LOGIN_USER_ID, PERF_ENV, BUILD_NUMBER, CHROME_PATH ...)
+       |
+       v
+  BeforeAll: chromium.launch({ executablePath: CHROME_PATH })
+       |
+       v
+  Before (per scenario):
+    - browser.newContext()  [no video if HEADLESS=true]
+    - context.tracing.start()
+    - createRecorder()          ← attaches request/response listeners
+    - usePerfContext({           ← sets name, env, version for this scenario
+        name: pickle.name,
+        env:  PERF_ENV,
+        version: BUILD_NUMBER ?? local-timestamp
+      })
+       |
+       v
+  Test steps run (test team code — no changes needed)
+    - page.goto(BASEURLESM)
+    - login, navigate, assert
+    - every HTTP call silently captured by recorder
+       |
+       v
+  After (per scenario):
+    - recorder stops listening
+    - records tagged with testName / environment / version
+    - queue.flush() → PostgreSQL (or CSV locally)
+    - screenshot + trace attached to Cucumber report
+       |
+       v
+  AfterAll:
+    - queue.stop() + final flush()
+    - closePool()
+    - browser.close()
+
+
+3. ENV VAR MAPPING
+------------------
+
+  Jenkins (Jenkinsfile export)      →   Used in
+  --------------------------------      ----------------------------
+  CHROME_PATH=/usr/bin/google-chrome    hooks.ts  BeforeAll
+  HEADLESS=true                         hooks.ts  BeforeAll + Before
+  BASEURLESM=https://esm.i<T>...        login.steps.ts  page.goto()
+  LOGIN_USER_ID=YC8DCZA                 users.ts  configuredUser
+  USER_PASSWORD=****                    users.ts  userPassword
+  BANK_NUMBER=<TENANT>                  users.ts  configuredUser
+  PERF_ENV=satu                         hooks.ts  usePerfContext
+  BUILD_NUMBER=<n>                      hooks.ts  testRunVersion
+  PERF_VERSION=<ESMSuiteVersion>        available for software version
+  PG_HOST / PG_PORT / PG_DB            db.ts     PostgreSQL connection
+  PG_USER / PG_PASSWORD                db.ts     PostgreSQL credentials
+
+
+4. PERF DATA FLOW
+-----------------
+
+  page.on('request')  ─┐
+                        ├─► Recorder (measures delta) ─► Queue (buffer)
+  page.on('response') ─┘                                      │
+                                                               │ flush()
+                                                               ▼
+                                                   +-----------------------+
+                                                   | PostgreSQL            |
+                                                   | db_regtest_timeseries |
+                                                   | .perf_results         |
+                                                   +-----------------------+
+                                                   (CSV for local dev)
+
+  Per HTTP call stored:
+    url, method, status_code, response_time_ms,
+    test_name, environment, version, recorded_at
+
+
+5. VERSION STRATEGY
+-------------------
+
+  testRunVersion (one value per Jenkins build, shared by all scenarios):
+
+    BUILD_NUMBER set  →  "build-42"         (Jenkins run identifier)
+    BUILD_NUMBER not set  →  "local-<timestamp>"  (local dev run)
+
+  This allows grouping all scenarios from one run:
+    SELECT version, COUNT(*), AVG(response_time_ms)
+    FROM regtest_timeseries.perf_results
+    GROUP BY version ORDER BY version DESC;
+
+
+6. JENKINS PIPELINE STAGES
+---------------------------
+
+  [1] Deploy ESMSuite        (only if DEPLOY=true, uses cing-python312 agent)
+       |
+  [2] Prepare Environments   (prepare_databases.py)
+       |
+  [3] Run Regression Tests   (cing-base-ext agent)
+       ├── git checkout esm-performance-test repo
+       ├── npm install
+       └── if RUN_REGRESSION_TESTS:
+             export env vars
+             cucumber-js --config=config/cucumber.js
+       |
+  [4] Run Lighthouse Tests
+       |
+  [5] Persist Results to Time-Series DB
+       |
+  [6] Generate Reports

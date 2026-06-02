@@ -9,7 +9,7 @@ export interface ObservationRecord extends PerfRecord {
 
 export interface Queue {
   enqueue(records: ObservationRecord[]): void;
-  flush(runNumber: number): Promise<boolean>;
+  flush(runNumber?: number): Promise<boolean>;
   size(): number;
   start(): void;
   stop(): void;
@@ -50,17 +50,23 @@ export function getQueue(): Queue {
 
   const buffer: ObservationRecord[] = [];
   let intervalId: ReturnType<typeof setInterval> | null = null;
-  let pendingRunNumber: number | null = null;
+  let lastRunNumber: number | null = null;
 
-  const flush = async (runNumber: number): Promise<boolean> => {
+  const flush = async (runNumber?: number): Promise<boolean> => {
+    const resolvedRunNumber = runNumber ?? lastRunNumber;
     if (buffer.length === 0) return true;
+    if (!resolvedRunNumber) {
+      console.warn('[perf-v2] flush() called without runNumber and no previous runNumber stored — skipping');
+      return false;
+    }
+    lastRunNumber = resolvedRunNumber;
     const batch = buffer.splice(0, buffer.length);
     const now = new Date();
 
     const csvPath = process.env.PERF_CSV_PATH;
     if (csvPath) {
       try {
-        flushToCsv(batch, runNumber, csvPath);
+        flushToCsv(batch, resolvedRunNumber, csvPath);
         return true;
       } catch (err) {
         console.warn(`[perf-v2] CSV write failed: ${(err as Error).message}`);
@@ -74,7 +80,7 @@ export function getQueue(): Queue {
     });
 
     const params = batch.flatMap((r) => [
-      runNumber,
+      resolvedRunNumber,
       r.metricName,
       r.responseTimeMs,
       now,

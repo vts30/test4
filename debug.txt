@@ -100,3 +100,26 @@ echo "=== Done ==="
 # ALTER TABLE regtest_timeseries.perf_results
 #   ALTER COLUMN id SET DEFAULT nextval('regtest_timeseries.perf_results_id_seq');
 # ALTER SEQUENCE regtest_timeseries.perf_results_id_seq OWNED BY regtest_timeseries.perf_results.id;
+
+# ── perf-lib-v2 debug ────────────────────────────────────────────────────────
+
+# 1. Check how many HTTP records were captured per scenario (add in After hook):
+#
+# console.log(`[perf-v2] captured ${recorder.records.length} HTTP records for: ${metricName}`);
+
+# 2. Check flush result and runNumber (add in After hook, after queue.flush):
+#
+# const success = await queue.flush(runNumber);
+# console.log(`[perf-v2] flush result: ${success}, runNumber: ${runNumber}`);
+# if (!success) hasFlushError = true;
+
+# 3. Verify DB rows after a run:
+#
+# SELECT * FROM test_runs ORDER BY run_number DESC LIMIT 5;
+# SELECT * FROM observations WHERE run_number = 1 LIMIT 20;
+# SELECT COUNT(*) FROM observations WHERE run_number = 1;
+
+# 4. Check test_run status:
+#
+# SELECT run_number, status, started_at, finished_at, build_id, environment
+# FROM test_runs ORDER BY run_number DESC LIMIT 5;

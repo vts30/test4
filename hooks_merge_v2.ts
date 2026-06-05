@@ -30,8 +30,6 @@ setDefaultTimeout(60 * 1000);
 let browser: Browser;
 let context: BrowserContext;
 let runManager: RunManager;
-let runNumber: number;
-let hasFlushError = false;
 
 // perf recording — one recorder per scenario
 let recorder: ReturnType<typeof createRecorder>;
@@ -49,7 +47,7 @@ BeforeAll(async function () {
 
   // create one test_run row for this entire Jenkins build
   runManager = createRunManager();
-  runNumber = await runManager.start();
+  runManager.start();
 
   getQueue().start();
 });
@@ -110,9 +108,6 @@ After(async function ({ pickle, result }) {
   }));
   queue.enqueue(observations);
 
-  const success = await queue.flush(runNumber);
-  if (!success) hasFlushError = true;
-
   // screenshot, video, trace
   let videoPath: string | undefined;
   let img: Buffer | undefined;
@@ -142,14 +137,8 @@ AfterAll(async function () {
   const queue = getQueue();
   queue.stop();
 
-  // final flush in case anything remains
-  if (queue.size() > 0) {
-    const success = await queue.flush(runNumber);
-    if (!success) hasFlushError = true;
-  }
-
-  // update test_run status — compensating: mark partial if any flush failed
-  await runManager.finish(hasFlushError ? 'partial' : 'complete');
+  const observations = queue.drain();
+  await runManager.finish(observations);
 
   await closePool();
   if (browser) await browser.close();

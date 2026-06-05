@@ -10,6 +10,7 @@ export interface ObservationRecord extends PerfRecord {
 export interface Queue {
   enqueue(records: ObservationRecord[]): void;
   flush(runNumber?: number): Promise<boolean>;
+  drain(): ObservationRecord[];
   size(): number;
   start(): void;
   stop(): void;
@@ -113,6 +114,9 @@ export function getQueue(): Queue {
       buffer.push(...records);
     },
     flush,
+    drain(): ObservationRecord[] {
+      return buffer.splice(0, buffer.length);
+    },
     size(): number {
       return buffer.length;
     },

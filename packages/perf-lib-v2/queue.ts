@@ -123,7 +123,7 @@ export function getQueue(): Queue {
     start(): void {
       if (!intervalId) {
         intervalId = setInterval(() => {
-          if (pendingRunNumber) flush(pendingRunNumber).catch(() => {});
+          if (lastRunNumber) flush(lastRunNumber).catch(() => {});
         }, 5000);
       }
     },

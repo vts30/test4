@@ -23,17 +23,28 @@ export function createRunManager(): RunManager {
 
         const runResult = await client.query(`
           INSERT INTO test_runs
-            (build_id, git_hash, branch, environment, test_suite, version, tags, started_at, finished_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-          RETURNING run_number
+            (build_id, git_repo, git_hash, git_branch,
+             test_git_repo, test_git_hash, test_git_branch,
+             environment, test_suite, sprint,
+             tags, started_at, finished_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+          RETURNING id
         `, [
-          cfg.buildId, cfg.gitHash, cfg.branch,
-          cfg.environment, cfg.testSuite, cfg.version,
-          cfg.buildId ? JSON.stringify({ build: cfg.buildId }) : null,
+          cfg.buildId,
+          cfg.gitRepo,
+          cfg.gitHash,
+          cfg.branch,
+          cfg.testGitRepo,
+          cfg.testGitHash,
+          cfg.testGitBranch,
+          cfg.environment,
+          cfg.testSuite ?? 'default',
+          cfg.sprint,
+          cfg.buildId ? JSON.stringify({ build: cfg.buildId }) : '{}',
           startedAt,
         ]);
 
-        const runNumber = runResult.rows[0].run_number as number;
+        const runId = runResult.rows[0].id as string;
 
         if (observations.length > 0) {
           const values = observations.map((_, i) => {
@@ -41,7 +52,7 @@ export function createRunManager(): RunManager {
             return `($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5})`;
           });
           const params = observations.flatMap((o) => [
-            runNumber, o.metricName, o.responseTimeMs, new Date(),
+            runId, o.metricName, o.responseTimeMs, new Date(),
             JSON.stringify({
               url: o.url, method: o.method, status_code: o.statusCode,
               response_size_bytes: o.responseSizeBytes,
@@ -49,7 +60,7 @@ export function createRunManager(): RunManager {
             }),
           ]);
           await client.query(`
-            INSERT INTO observations (run_number, metric_name, value, recorded_at, attributes)
+            INSERT INTO observations (run_id, metric_name, value, recorded_at, attributes)
             VALUES ${values.join(', ')}
           `, params);
         }

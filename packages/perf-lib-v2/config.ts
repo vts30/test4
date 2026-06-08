@@ -5,9 +5,14 @@ export interface PerfConfigV2 {
   environment: string;
   version: string;
   buildId: string | null;
+  gitRepo: string | null;
   gitHash: string | null;
   branch: string | null;
+  testGitRepo: string | null;
+  testGitHash: string | null;
+  testGitBranch: string | null;
   testSuite: string | null;
+  sprint: string | null;
   database: {
     connectionString?: string;
     host: string;
@@ -46,12 +51,17 @@ export function resolveConfig(): PerfConfigV2 {
   const jsonDb = json.database ?? {};
 
   return {
-    environment: process.env.PERF_ENV ?? json.environment ?? 'local',
-    version:     process.env.PERF_VERSION ?? json.version ?? 'unknown',
-    buildId:     process.env.BUILD_NUMBER ?? null,
-    gitHash:     process.env.GIT_COMMIT ?? null,
-    branch:      process.env.GIT_BRANCH ?? null,
-    testSuite:   process.env.PERF_TEST_SUITE ?? null,
+    environment:  process.env.PERF_ENV ?? json.environment ?? 'local',
+    version:      process.env.PERF_VERSION ?? json.version ?? 'unknown',
+    buildId:      process.env.BUILD_NUMBER ?? null,
+    gitRepo:      process.env.GIT_URL ?? null,
+    gitHash:      process.env.GIT_COMMIT ?? null,
+    branch:       process.env.GIT_BRANCH ?? null,
+    testGitRepo:  process.env.TEST_GIT_REPO ?? null,
+    testGitHash:  process.env.TEST_GIT_HASH ?? null,
+    testGitBranch: process.env.TEST_GIT_BRANCH ?? null,
+    testSuite:    process.env.PERF_TEST_SUITE ?? null,
+    sprint:       process.env.SPRINT ?? null,
     database: {
       connectionString: process.env.DATABASE_URL,
       host:     process.env.PG_HOST ?? jsonDb.host ?? 'localhost',

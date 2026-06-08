@@ -11,10 +11,8 @@ CREATE TABLE IF NOT EXISTS test_runs (
   test_suite   TEXT,
   started_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   finished_at  TIMESTAMPTZ,
-  status       TEXT         NOT NULL DEFAULT 'running',
   tags         JSONB,
-  version      TEXT,
-  CONSTRAINT test_runs_status_check CHECK (status IN ('running', 'complete', 'partial'))
+  version      TEXT
 );
 
 CREATE TABLE IF NOT EXISTS observations (

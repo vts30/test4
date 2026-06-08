@@ -23,8 +23,8 @@ export function createRunManager(): RunManager {
 
         const runResult = await client.query(`
           INSERT INTO test_runs
-            (build_id, git_hash, branch, environment, test_suite, version, tags, started_at, finished_at, status)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), 'complete')
+            (build_id, git_hash, branch, environment, test_suite, version, tags, started_at, finished_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
           RETURNING run_number
         `, [
           cfg.buildId, cfg.gitHash, cfg.branch,

@@ -53,7 +53,7 @@ export function resolveConfig(): PerfConfigV2 {
   return {
     environment:  process.env.PERF_ENV ?? json.environment ?? 'local',
     version:      process.env.PERF_VERSION ?? json.version ?? 'unknown',
-    buildId:      process.env.BUILD_NUMBER ?? null,
+    buildId:      process.env.BUILD_NUMBER ?? `local-${Date.now()}`,
     gitRepo:      process.env.GIT_URL ?? null,
     gitHash:      process.env.GIT_COMMIT ?? null,
     branch:       process.env.GIT_BRANCH ?? null,

@@ -19,6 +19,8 @@ export function createRunManager(): RunManager {
     async finish(observations: ObservationRecord[]): Promise<void> {
       const client = await getPool().connect();
       try {
+        const schema = process.env.PG_SCHEMA;
+        if (schema) await client.query(`SET search_path TO ${schema}, public`);
         await client.query('BEGIN');
 
         const runResult = await client.query(`

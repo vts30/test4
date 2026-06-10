@@ -119,7 +119,30 @@ echo "=== Done ==="
 # SELECT * FROM observations WHERE run_number = 1 LIMIT 20;
 # SELECT COUNT(*) FROM observations WHERE run_number = 1;
 
-# 4. Check test_run status:
+# 4. Verify DB rows after a run (perf-lib-v2):
 #
-# SELECT run_number, status, started_at, finished_at, build_id, environment
-# FROM test_runs ORDER BY run_number DESC LIMIT 5;
+# SELECT id, build_id, environment, test_suite, started_at, finished_at
+# FROM test_runs ORDER BY started_at DESC LIMIT 5;
+#
+# SELECT run_id, metric_name, value, recorded_at
+# FROM observations WHERE run_id = '<uuid>' LIMIT 20;
+#
+# SELECT COUNT(*) FROM observations WHERE run_id = '<uuid>';
+
+# ── perf-lib-v2 schema permissions ───────────────────────────────────────────
+#
+# If Jenkins fails with: error: relation "test_runs" does not exist
+# → The DB user is missing USAGE on the schema. Run in pgAdmin (Query Tool):
+#
+# GRANT USAGE ON SCHEMA pgtest_branch TO db_regtest_timeseries;
+# GRANT INSERT, SELECT ON ALL TABLES IN SCHEMA pgtest_branch TO db_regtest_timeseries;
+# GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA pgtest_branch TO db_regtest_timeseries;
+#
+# Steps in pgAdmin:
+#   1. Expand: mendix_admin → Schemas → pgtest_branch
+#   2. Tools → Query Tool
+#   3. Paste the three GRANT statements above
+#   4. Press F5 to execute
+#
+# Also update PG_SCHEMA in the Jenkinsfile to match the schema name:
+#   export PG_SCHEMA=pgtest_branch

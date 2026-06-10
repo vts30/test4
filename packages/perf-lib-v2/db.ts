@@ -7,22 +7,18 @@ export function getPool(): Pool {
   if (pool) return pool;
   const cfg = resolveConfig();
   const dbCfg = cfg.database;
-
-  pool = dbCfg.connectionString
-    ? new Pool({ connectionString: dbCfg.connectionString })
-    : new Pool({
-        host:     dbCfg.host,
-        port:     dbCfg.port,
-        user:     dbCfg.user,
-        password: dbCfg.password,
-        database: dbCfg.dbName,
-      });
-
   const schema = process.env.PG_SCHEMA;
-  if (schema) {
-    pool.on('connect', (client) => {
-      client.query(`SET search_path TO ${schema}, public`).catch(() => {});
-    });
+
+  if (dbCfg.connectionString) {
+    const url = new URL(dbCfg.connectionString);
+    if (schema) url.searchParams.set('options', `-c search_path=${schema},public`);
+    pool = new Pool({ connectionString: url.toString() });
+  } else {
+    const url = new URL(`postgresql://${dbCfg.host}:${dbCfg.port}/${dbCfg.dbName}`);
+    url.username = dbCfg.user;
+    url.password = dbCfg.password;
+    if (schema) url.searchParams.set('options', `-c search_path=${schema},public`);
+    pool = new Pool({ connectionString: url.toString() });
   }
 
   return pool;

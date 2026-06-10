@@ -17,14 +17,16 @@ export function createRunManager(): RunManager {
     },
 
     async finish(observations: ObservationRecord[]): Promise<void> {
+      const schema = process.env.PG_SCHEMA;
+      const tr = schema ? `${schema}.test_runs` : 'test_runs';
+      const obs = schema ? `${schema}.observations` : 'observations';
+
       const client = await getPool().connect();
       try {
-        const schema = process.env.PG_SCHEMA;
-        if (schema) await client.query(`SET search_path TO ${schema}, public`);
         await client.query('BEGIN');
 
         const runResult = await client.query(`
-          INSERT INTO test_runs
+          INSERT INTO ${tr}
             (build_id, git_repo, git_hash, git_branch,
              test_git_repo, test_git_hash, test_git_branch,
              environment, test_suite, sprint,
@@ -62,7 +64,7 @@ export function createRunManager(): RunManager {
             }),
           ]);
           await client.query(`
-            INSERT INTO observations (run_id, metric_name, value, recorded_at, attributes)
+            INSERT INTO ${obs} (run_id, metric_name, value, recorded_at, attributes)
             VALUES ${values.join(', ')}
           `, params);
         }

@@ -95,16 +95,15 @@ export function getQueue(): Queue {
       }),
     ]);
 
+    const schema = process.env.PG_SCHEMA;
+    const obs = schema ? `${schema}.observations` : 'observations';
     const sql = `
-      INSERT INTO observations (run_id, metric_name, value, recorded_at, attributes)
+      INSERT INTO ${obs} (run_id, metric_name, value, recorded_at, attributes)
       VALUES ${values.join(', ')}
     `;
 
     try {
-      const pool = getPool();
-      const schema = process.env.PG_SCHEMA;
-      if (schema) await pool.query(`SET search_path TO ${schema}, public`);
-      await pool.query(sql, params);
+      await getPool().query(sql, params);
       return true;
     } catch (err) {
       console.warn(`[perf-v2] DB write failed: ${(err as Error).message}`);

@@ -167,7 +167,18 @@ echo "=== Done ==="
 # AND tc.table_name LIKE 'observations%'
 # AND tc.table_schema = 'regtest_branch';
 #
-# If fk_target_schema is wrong, recreate the tables:
+# If fk_target_schema is 'public' instead of your schema, fix the FK in place:
+#
+# ALTER TABLE regtest_branch.observations
+#   DROP CONSTRAINT IF EXISTS observations_run_id_fkey;
+#
+# ALTER TABLE regtest_branch.observations
+#   ADD CONSTRAINT observations_run_id_fkey
+#   FOREIGN KEY (run_id) REFERENCES regtest_branch.test_runs(id) ON DELETE CASCADE;
+#
+# (Replace 'regtest_branch' with your actual PG_SCHEMA value)
+#
+# If you prefer to recreate the tables from scratch instead:
 #
 # DROP TABLE IF EXISTS regtest_branch.observations CASCADE;
 # DROP TABLE IF EXISTS regtest_branch.test_runs CASCADE;

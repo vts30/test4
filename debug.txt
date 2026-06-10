@@ -146,3 +146,38 @@ echo "=== Done ==="
 #
 # Also update PG_SCHEMA in the Jenkinsfile to match the schema name:
 #   export PG_SCHEMA=pgtest_branch
+
+# ── perf-lib-v2 FK constraint check ──────────────────────────────────────────
+#
+# If Jenkins fails with: foreign key constraint "observations_run_id_fkey" violated
+# → The observations table FK references the wrong test_runs schema.
+#   This happens when the table was created with a different search_path.
+#
+# Check what the FK actually references (run in pgAdmin on the Jenkins DB):
+#
+# SELECT
+#   tc.table_schema,
+#   tc.table_name,
+#   ccu.table_schema AS fk_target_schema,
+#   ccu.table_name   AS fk_target_table
+# FROM information_schema.table_constraints tc
+# JOIN information_schema.constraint_column_usage ccu
+#   ON ccu.constraint_name = tc.constraint_name
+# WHERE tc.constraint_type = 'FOREIGN KEY'
+# AND tc.table_name LIKE 'observations%'
+# AND tc.table_schema = 'regtest_branch';
+#
+# If fk_target_schema is wrong, recreate the tables:
+#
+# DROP TABLE IF EXISTS regtest_branch.observations CASCADE;
+# DROP TABLE IF EXISTS regtest_branch.test_runs CASCADE;
+#
+# Then run schema.ts with the correct PG_SCHEMA set so the FK is created
+# pointing to the right schema:
+#
+# PG_HOST=pgsek555.pka.bankenit.de \
+# PG_USER=db_regtest_timeseries \
+# PG_PASSWORD=<password> \
+# PG_DB=db_regtest_timeseries \
+# PG_SCHEMA=regtest_branch \
+# npx ts-node packages/perf-lib-v2/schema.ts

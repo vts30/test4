@@ -44,7 +44,10 @@ export function createRunManager(): RunManager {
           cfg.environment,
           cfg.testSuite ?? 'default',
           cfg.sprint,
-          cfg.buildId ? JSON.stringify({ build: cfg.buildId }) : '{}',
+          JSON.stringify({
+            ...(cfg.buildId ? { build: cfg.buildId } : {}),
+            ...(observations.length >= 500 ? { high_volume: true } : {}),
+          }),
           startedAt,
         ]);
 

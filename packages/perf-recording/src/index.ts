@@ -1,0 +1,11 @@
+export { createRecorder }                        from './core/recorder';
+export type { PerfRecord, Recorder }             from './core/recorder';
+export { getQueue }                              from './core/queue';
+export type { ObservationRecord, Queue }         from './core/queue';
+export { createContextSetter }                   from './core/context';
+export type { PerfContext, UsePerfContext }       from './core/context';
+export { resolveConfig }                         from './core/config';
+export type { PerfConfig }                       from './core/config';
+export { getPool, closePool }                    from './core/db';
+export { createRunManager }                      from './core/run';
+export type { RunManager }                       from './core/run';

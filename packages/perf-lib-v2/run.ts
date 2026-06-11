@@ -46,7 +46,7 @@ export function createRunManager(): RunManager {
           cfg.sprint,
           JSON.stringify({
             ...(cfg.buildId ? { build: cfg.buildId } : {}),
-            ...(observations.length >= 500 ? { high_volume: true } : {}),
+            ...(observations.length >= 500 ? { golden: true } : {}),
           }),
           startedAt,
         ]);

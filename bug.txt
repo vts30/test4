@@ -1,0 +1,20 @@
+forumsuite — Performance-Zusammenfassung (Produktion)
+Umgebung: bsp-0603-zka_ocp-bsp-zka01 / Produktion Karlsruhe
+
+Memory Leak aktiv
+Der JVM-Heap-Basiswert liegt dauerhaft bei ca. 8 GiB — dieser Speicher überlebt jeden Garbage-Collection-Zyklus und wird nicht freigegeben. Die Heap-Obergrenze beträgt 16 GiB, was bei Spitzenlast weniger als 2 GiB Puffer lässt. Bei erhöhtem Traffic besteht das Risiko eines OOMKills (Pod-Absturz).
+
+Übermäßige Objekterzeugung
+Der Eden Space füllt sich schnell und löst häufige Minor-GC-Zyklen mit Pausen von bis zu 1,6 Sekunden aus. Dies deutet auf eine sehr hohe Objektallokationsrate in der Anwendung hin, mit der der GC nicht effizient Schritt halten kann.
+
+Full-GC-Pausen
+Die Old Gen löst Full-GC-Ereignisse mit Stop-the-World-Pausen von ca. 200 ms aus. Während dieser Pausen werden alle Anwendungs-Threads eingefroren — Benutzer erleben Verzögerungen bei Anfragen.
+
+Ursache (identifiziert via Dynatrace-Profiling)
+
+MetricsHelper.parse — verwendet org.json.simple.parser.JSONParser und erzeugt hunderte Millionen von Objekten, die nicht vom GC bereinigt werden
+ModelDefinition.getApplicationModelTypeNames — eine unbegrenzt wachsende HashMap ohne Größenlimit oder Eviction-Mechanismus
+Empfohlene Maßnahmen für das Entwicklungsteam
+
+JSONParser in MetricsHelper.parse durch die Jackson Streaming API ersetzen
+Größenlimit oder TTL-basierte Eviction für die HashMap in ModelDefinition.getApplicationModelTypeNames einführen

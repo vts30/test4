@@ -49,13 +49,12 @@ pipeline {
                         credentialsId: 'bsp_scm_credentials'
                 }
                 dir('playwright-tests/1111') {
-                    sh '''
-                        echo "@atruvia:registry=https://nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/" > .npmrc
-                        echo "strict-ssl=false" >> .npmrc
-                    '''
-                    sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
-                    sh 'echo "=== src/hooks/hooks.ts ===" && cat src/hooks/hooks.ts'
                     withCredentials([
+                        usernamePassword(
+                            credentialsId: 'nexus-npm-credentials',
+                            usernameVariable: 'NEXUS_USER',
+                            passwordVariable: 'NEXUS_PASSWORD'
+                        ),
                         usernamePassword(
                             credentialsId: 'ESM_LOGIN_CREDENTIALS_ID',
                             usernameVariable: 'LOGIN_USER',
@@ -67,6 +66,15 @@ pipeline {
                             passwordVariable: 'PG_PASSWORD'
                         )
                     ]) {
+                    sh '''
+                        NPM_AUTH=$(echo -n "${NEXUS_USER}:${NEXUS_PASSWORD}" | base64 -w 0)
+                        echo "@atruvia:registry=https://nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/" > .npmrc
+                        echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:_auth=${NPM_AUTH}" >> .npmrc
+                        echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:always-auth=true" >> .npmrc
+                        echo "strict-ssl=false" >> .npmrc
+                    '''
+                    sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
+                    sh 'echo "=== src/hooks/hooks.ts ===" && cat src/hooks/hooks.ts'
                         sh """
                             export LOGIN_URL=https://login.i${params.TENANT}.sys3.tb.rz.bankenit.de
                             export APPS_URL=https://esm.i${params.TENANT}.sys3.tb.rz.bankenit.de:16613/

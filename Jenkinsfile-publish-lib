@@ -61,7 +61,7 @@ pipeline {
                             echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:_auth=\${NPM_AUTH}" >> .npmrc
                             echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:always-auth=true"   >> .npmrc
                             echo "strict-ssl=false"                                             >> .npmrc
-                            npm publish
+                            npm publish --cache .npm
                         """
                     }
                 }

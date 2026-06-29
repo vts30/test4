@@ -36,7 +36,7 @@ pipeline {
         stage('Set version') {
             steps {
                 dir("${LIB_DIR}") {
-                    sh "npm version ${params.LIB_VERSION} --no-git-tag-version"
+                    sh "npm version ${params.LIB_VERSION} --no-git-tag-version --allow-same-version"
                 }
             }
         }

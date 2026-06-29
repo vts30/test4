@@ -20,7 +20,7 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 dir("${LIB_DIR}") {
-                    sh 'npm install --legacy-peer-deps --strict-ssl=false'
+                    sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
                 }
             }
         }

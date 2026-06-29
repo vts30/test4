@@ -20,7 +20,7 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 dir("${LIB_DIR}") {
-                    sh 'npm install'
+                    sh 'npm install --legacy-peer-deps --strict-ssl=false'
                 }
             }
         }
@@ -60,6 +60,7 @@ pipeline {
                             echo "@atruvia:registry=${NEXUS_REGISTRY}"                          > .npmrc
                             echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:_auth=\${NPM_AUTH}" >> .npmrc
                             echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:always-auth=true"   >> .npmrc
+                            echo "strict-ssl=false"                                             >> .npmrc
                             npm publish
                         """
                     }

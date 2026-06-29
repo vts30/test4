@@ -43,16 +43,18 @@ pipeline {
 
         stage('Publish to Nexus') {
             steps {
+                // nexus-npm-token: store Nexus User Token (token-username + token-password)
+                // Generate in Nexus: top-right username → User Token → Access User Token
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'nexus-npm-credentials',
-                        usernameVariable: 'NEXUS_USER',
-                        passwordVariable: 'NEXUS_PASSWORD'
+                        credentialsId: 'nexus-npm-token',
+                        usernameVariable: 'NEXUS_TOKEN_USER',
+                        passwordVariable: 'NEXUS_TOKEN_PASS'
                     )
                 ]) {
                     dir("${LIB_DIR}") {
                         sh """
-                            export NPM_AUTH=\$(echo -n "\${NEXUS_USER}:\${NEXUS_PASSWORD}" | base64)
+                            export NPM_AUTH=\$(echo -n "\${NEXUS_TOKEN_USER}:\${NEXUS_TOKEN_PASS}" | base64)
                             npm publish --registry ${NEXUS_REGISTRY}
                         """
                     }

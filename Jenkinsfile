@@ -49,6 +49,10 @@ pipeline {
                         credentialsId: 'bsp_scm_credentials'
                 }
                 dir('playwright-tests/1111') {
+                    sh '''
+                        echo "@atruvia:registry=https://nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/" > .npmrc
+                        echo "strict-ssl=false" >> .npmrc
+                    '''
                     sh 'npm config set strict-ssl false && npm config set registry https://nexus.rz.bankenit.de/repository/npm-internet-proxy/ && npm install --cache .npm'
                     sh 'echo "=== src/hooks/hooks.ts ===" && cat src/hooks/hooks.ts'
                     withCredentials([

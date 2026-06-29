@@ -56,7 +56,7 @@ pipeline {
                 ]) {
                     dir("${LIB_DIR}") {
                         sh """
-                            NPM_AUTH=\$(echo -n "\${NEXUS_USER}:\${NEXUS_PASSWORD}" | base64)
+                            NPM_AUTH=\$(echo -n "\${NEXUS_USER}:\${NEXUS_PASSWORD}" | base64 -w 0)
                             echo "@atruvia:registry=${NEXUS_REGISTRY}"                          > .npmrc
                             echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:_auth=\${NPM_AUTH}" >> .npmrc
                             echo "//nexus.in.fiduciagad.de/repository/business-service-platform-npm-hosted/:always-auth=true"   >> .npmrc
